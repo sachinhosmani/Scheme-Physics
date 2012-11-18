@@ -1,0 +1,13 @@
+#canvas {
+	float : left;
+	border :1px solid black;
+}
+#input {
+	float : left; 
+	margin-left : 30px; 
+	resize : none;
+}
+#output {
+	margin-left : 30px; 
+	resize : none;
+}

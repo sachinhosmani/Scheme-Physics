@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>SchemePhysics</title>
+	<link href="styles.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+	<canvas id="canvas" width=800 height=500></canvas>
+	<textarea rows = 30 cols = 50 id = "input" class = "text_box"></textarea>
+	<input type = "button" id = "eval_btn" value = "Evaluate" style = "float : left"></input>
+	<input type = "button" id = "sample_btn" value = "Sample Code"></input>
+	<textarea rows = 10 cols = 50 id = "output" disabled = "disabled" class = "text_box"></textarea>
+	<script type="text/javascript" src="webgl-utils.js"></script>
+	<script type="text/javascript" src="Box2dWeb-2.1.a.3.js"></script>
+	<script type="text/javascript" src="biwascheme.js" ></script>
+	<script type="text/javascript" src="jquery.js"></script>
+	<script type="text/javascript">
+		var canvas_width = 800;
+		var canvas_height = 500;
+	</script>
+	<script type="text/javascript" src="render.js"></script>
+	<script type="text/javascript" src="scheme.js"></script>
+	<!-- vertex shader -->
+	<script id="2d-vertex-shader" type="x-shader/x-vertex">
+		attribute vec2 a_position;
+
+		uniform vec2 u_resolution;
+		uniform vec2 u_translation;
+		uniform vec2 u_rotation;
+		void main() {
+			vec2 rotatedPosition = vec2(
+			a_position.x * u_rotation.y + a_position.y * u_rotation.x,
+			a_position.y * u_rotation.y - a_position.x * u_rotation.x);
+
+			// Add in the translation.
+			vec2 position = rotatedPosition + u_translation;
+
+			// convert the position from pixels to 0.0 to 1.0
+			vec2 zeroToOne = position / u_resolution;
+
+			// convert from 0->1 to 0->2
+			vec2 zeroToTwo = zeroToOne * 2.0;
+
+			// convert from 0->2 to -1->+1 (clipspace)
+			vec2 clipSpace = zeroToTwo - 1.0;
+
+			gl_Position = vec4(clipSpace, 0, 1);
+		}
+	</script>
+	<!-- fragment shader -->
+	<script id="2d-fragment-shader" type="x-shader/x-fragment">
+		precision mediump float;
+
+		uniform vec4 u_color;
+
+		void main() {
+			gl_FragColor = u_color;
+		}
+	</script>
+	<script id = "basic_functions" type = "text/scheme">
+		(define dynamic "dynamic")
+		(define static "static")
+		(define (rect-shape width height)
+				(list width height))
+		(define (circle-shape radius)
+				(list radius))
+		(define (attributes density friction restitution)
+				(list density friction restitution))
+		(define (color r g b)
+				(list r g b))
+		(define (vector2 x y)
+				(list x y))
+		(define (angle ang)
+				(list ang))
+		
+		(define click "click")
+	</script>
+	<script id = "sample" type = "text/scheme">
+;;add-body adds a body to the world
+;;rect-shape width height
+;;attributes density friction restitution
+;;vector2 x y
+;;color red green blue
+(define b-shape (rect-shape 50.0 40.0))
+(define b-attribs (attributes 1.0 0.5 0.5))
+(define b-position (vector2 200.0 400.0))
+(define b-color (color 0.3 0.4 0.65))
+(define b-angle (angle 0.55))
+(define id "id3")
+
+(add-body dynamic b-shape b-position b-angle b-attribs b-color id)
+	</script>
+
+</body>
+</html>
