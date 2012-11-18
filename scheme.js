@@ -74,7 +74,7 @@ BiwaScheme.define_libfunc("on", 2, 2, function(args) {
 	}
 });
 BiwaScheme.define_libfunc("alert-coords", 0, 0, function() {
-	alert(xClick + " " + yClick);
+	console.log(xClick + " " + yClick);
 });
 function scheme_eval() {
 	if(unbalanced_parentheses(input.val())) {
@@ -113,5 +113,5 @@ function removeClicked() {
 }
 function fetchCoords(event) {
 	xClick = event.clientX - canvas.offsetLeft;
-	yClick = event.clientY - canvas.offsetTop;
+	yClick = canvas_height - (event.clientY - canvas.offsetTop);
 }
