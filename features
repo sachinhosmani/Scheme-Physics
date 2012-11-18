@@ -1,0 +1,14 @@
+Implemented Functions :
+
+1. add-body (adds a body to the world)
+2. remove-body (removes a body of given id from the world)
+3. alert (invokes alert)
+4. remove-clicked (removes a body when clicked on it; should be added as an event handler to click using "on")
+5. alert-coords (alerts click co-ordinates; should be added as an event handler to click using "on")
+
+6. on :
+        when the 1st argument happens, code enclosed in 2nd argument is evaluated 
+        (adds the event handler to the event)
+
+        ->supports "click" (e.g : (on click "(remove-clicked)"))
+
