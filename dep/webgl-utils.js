@@ -1,4 +1,3 @@
-// Licensed under a BSD license. See ../license.html for license
 /*Copyright (c) 2011, Gregg Tavares
 All rights reserved.
 

@@ -105,8 +105,14 @@ function Buffer(position, angle) {
 	this.position = position;
 	this.angle = angle;
 }
+function findBody(id) {
+	for(var i = 0; i < body_count; i++)
+		if(bodies[i].id == id)
+			return bodies[i];
+	return undefined;
+}
 function findBodyAt(pos) {
-	for(i = 0; i < body_count; i++) {
+	for(var i = 0; i < body_count; i++) {
 		if(bodies[i].contains(pos))
 			return bodies[i];
 	}
@@ -327,7 +333,6 @@ function start() {
 		new Vector2D(0.0, 0.0), new Attributes(1.0, 0.5, 0.2), new Color(0.3, 0.3, 0.4), "id2"));
 	addBody(new Body(b2Body.b2_staticBody, new RectangleShape(1000.0, 25.0), new Vector2D(350.0, 10.0), 0, 
 		new Vector2D(0.0, 0.0), new Attributes(1.0, 0.5, 0.2), new Color(0.5, 0.6, 0.6), "id1"));
-	console.log(findBodyAt(new Vector2D(473, 126)));
 	//setup debug draw
 	/*var debugDraw = new b2DebugDraw();
 		debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));

@@ -56,10 +56,10 @@ BiwaScheme.define_libfunc("add-body", 7, 7, function(args) {
 	var id = args[6];
 	if(shape.length === 2) //if rectangle
 		addBody(new Body(body_type, new RectangleShape(shape[0], shape[1]), new Vector2D(position[0], position[1]), angle[0], 
-		new Vector2D(0.0, 0.0), new Attributes(attributes[0], attributes[1], attributes[2]), new Color(color[0], color[1], color[2])), id);
+		new Vector2D(0.0, 0.0), new Attributes(attributes[0], attributes[1], attributes[2]), new Color(color[0], color[1], color[2]), id));
 	else if(shape.length === 1) //if circle
 		addBody(new Body(body_type, new CircleShape(shape[0]), new Vector2D(position[0], position[1]), angle[0], 
-		new Vector2D(0.0, 0.0), new Attributes(attributes[0], attributes[1], attributes[2]), new Color(color[0], color[1], color[2])), id);
+		new Vector2D(0.0, 0.0), new Attributes(attributes[0], attributes[1], attributes[2]), new Color(color[0], color[1], color[2]), id));
 	return BiwaScheme.undef;
 });
 BiwaScheme.define_libfunc("remove-body", 1, 1, function(args) {
@@ -68,13 +68,24 @@ BiwaScheme.define_libfunc("remove-body", 1, 1, function(args) {
 BiwaScheme.define_libfunc("remove-clicked", 0, 0, function() {
 	removeClicked();
 });
+BiwaScheme.define_libfunc("change-color", 2, 2, function(args) {
+	var color_arr = tokenize_list(args[1]);
+	var id = args[0];
+	c_body = findBody(id);
+	if(c_body != undefined) {
+		c_body.color = new Color(color_arr[0], color_arr[1], color_arr[2]);
+	}
+});
 BiwaScheme.define_libfunc("on", 2, 2, function(args) {
+	console.log(args);
 	if(args[0] === "click") {
+		console.log(args[1]);
 		addHandler("click", args[1]);
+		console.log('"' + args[1].toString() + '"');
 	}
 });
 BiwaScheme.define_libfunc("alert-coords", 0, 0, function() {
-	console.log(xClick + " " + yClick);
+	alert(xClick + " " + yClick);
 });
 function scheme_eval() {
 	if(unbalanced_parentheses(input.val())) {
@@ -101,8 +112,9 @@ function tokenize_list(list) {//converts scheme list to javascript array
 	return tokens;
 }
 function addHandler(event, scheme_code) {
-	var evalSchemeCode = function(e) {
+	var evalSchemeCode = function() {
 						intepreter.evaluate(scheme_code);
+						console.log(scheme_code);
 						};
 	canvas.addEventListener(event, evalSchemeCode, false);
 }
