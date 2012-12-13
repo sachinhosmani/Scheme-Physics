@@ -12,3 +12,10 @@ Implemented Functions :
 
         ->supports "click" (e.g : (on click "(remove-clicked)"))
 
+7. bg-color (changes the background color)
+
+Implemented Variables :
+
+1. x-click & y-click (coordinates of the last click on canvas)
+2. body-count (number of bodies in the world)
+3. canvas-width & canvas-height (dimensions of the HTML5 canvas in pixels)
