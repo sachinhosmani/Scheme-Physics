@@ -46,22 +46,53 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 
 
 /* Types*/
-function CircleShape(radius) { //circle's shape constructor
+function CircleShape(radius) { //circle shape constructor
 	this.type = "Circle";
 	this.radius = radius;
 	this.buffer = g_WebGL.gl.createBuffer();
 	setup(this);
 }
-function RectangleShape(width, height) { //rectangle's shape constructor
+function RectangleShape(width, height) { //rectangle shape constructor
 	this.type = "Rectangle";
 	this.width = width;
 	this.height = height;
 	this.buffer = g_WebGL.gl.createBuffer();
 	setup(this);
 }
-function TriangleShape(vertices) {
+/*function TriangleShape(vertices) {
 	this.type = "Triangle";
 	this.vertices = vertices;
+	var makeAntiClockwise = function(p_vertices) {
+		p_vertices.sort(function(a, b) {
+			return a.angle() - b.angle();
+		});
+	};
+	makeAntiClockwise(this.vertices);
+	this.buffer = g_WebGL.gl.createBuffer();
+	setup(this);
+}*/
+function PolygonShape(vertices) { //polygon shape constructor
+	this.type = "Polygon";
+	this.vertices = vertices;
+	//finds mid-point of a set of vertices
+	var midPoint = function(p_vertices) {	
+		var sum1 = 0, sum2 = 0;
+		for(var i = 0; i < p_vertices.length; i++) {
+			sum1 += p_vertices[i].x;
+			sum2 += p_vertices[i].y;
+		}
+		return new Vector2D(sum1/p_vertices.length, sum2/p_vertices.length);
+	};
+	var mid_point = midPoint(this.vertices);
+	//make sure vertices are in anti-clockwise order (Box2D constraint)
+	var makeAntiClockwise = function(p_vertices, ref_point) {
+		p_vertices.sort(function(a, b) {
+			return a.angle(ref_point) - b.angle(ref_point);
+		});
+	};
+	console.log(this.vertices);
+	makeAntiClockwise(this.vertices, mid_point);
+	console.log(this.vertices);
 	this.buffer = g_WebGL.gl.createBuffer();
 	setup(this);
 }
@@ -70,36 +101,59 @@ function Color(red, green, blue) {
 	this.green = typeof green === "number" ? green : 0.5;
 	this.blue = typeof blue === "number" ? blue : 0.5;
 }
-
 function Vector2D(x, y) { //2D vector constructor
 	this.x = x;
 	this.y = y;
-	this.mag = function() { return Math.sqrt(this.x * this.x + this.y + this.y) };
-	this.add = function(p_vector) { return new Vector2D(p_vector.x + this.x, p_vector.y + this.y); };
-	this.sub = function(p_vector) { return new Vector2D(this.x - p_vector.x, this.y - p_vector.y); };
-	this.dist = function(p_vector) { return this.mag(this.sub(p_vector)); };
+	this.mag = function() {
+		return Math.sqrt(this.x * this.x + this.y + this.y)
+	};
+	this.add = function(p_vector) {
+		return new Vector2D(p_vector.x + this.x, p_vector.y + this.y);
+	};
+	this.sub = function(p_vector) {
+		return new Vector2D(this.x - p_vector.x, this.y - p_vector.y);
+	};
+	this.dist = function(p_vector) {
+		return this.mag(this.sub(p_vector))
+	};
+	//angle wrt a vertex
+	this.angle = function(vertex) {
+		var to2PI = function(p_angle) {
+			if(p_angle < 0) {
+				return 2 * Math.PI + p_angle; //so that angle lies in [0, 2 * PI)
+			}
+			return p_angle;
+		};
+		if(vertex !== undefined && typeof vertex.x === "number" && typeof vertex.y === "number") {
+			return to2PI(Math.atan2((this.y - vertex.y), (this.x - vertex.x)));
+		}
+		else {
+			return to2PI(Math.atan2(this.y, this.x));
+		}
+	}
 }
 function Attributes(density, friction, restitution) { //holds attributes of a body
-	var liesIn = function(num, a, b) {
-		if(typeof num === "number" && (num >= a && num <= b)) return 1;
-		else return 0;
-	}
 	this.density = liesIn(density, 0, Infinity) ? density : 0.5;
 	this.friction = liesIn(friction, 0, Infinity) ? friction : 0.5;
 	this.restitution = liesIn(restitution, 0, 1) ? restitution : 0.5;
 }
 function Body(p_type, p_shape, p_position, p_angle, p_velocity, p_attributes, p_color, p_id) { //body container
 	return {
-		type : function() { return typeof p_type !== "undefined" ? p_type : b2Body.b2_dynamicBody; } ,
+		type : function() {
+			return p_type !== undefined ? p_type : b2Body.b2_dynamicBody;
+		} ,
 		shape : p_shape ,
 		position : p_position ,
 		angle : p_angle ,
 		velocity : p_velocity ,
 		attributes : p_attributes ,
-		color : typeof p_color !== "undefined" ? p_color : new Color ,
-		number_vertices : function() { return p_shape.type === "Triangle" ? 3 : (p_shape.type === "Rectangle" ? 4 : 60); } ,
-		id : function() { return p_id !== undefined ? p_id : g_Box2D.body_count; } ,
-
+		color : p_color !== undefined ? p_color : new Color ,
+		number_vertices : function() {
+			return p_shape.type === "Polygon" ? this.shape.vertices.length : (p_shape.type === "Rectangle" ? 4 : 60);
+		} ,
+		id : function() {
+			return p_id !== undefined ? p_id : g_Box2D.body_count;
+		} ,
 		contains : //tells if 'pos' lies inside the shape
 			function(pos) {
 				switch(this.shape.type) {
@@ -150,17 +204,25 @@ function addBody(body) { //adds a body to the world
 	fixDef.friction = body.attributes.friction;
 	fixDef.restitution = body.attributes.restitution;
 	switch(body.shape.type) {
-		case "Rectangle":	
+		case "Polygon" : /*case "Triangle" :*/
 			fixDef.shape = new b2PolygonShape;
-			fixDef.shape.SetAsBox(body.shape.width/(2.0*g_Box2D.scale), body.shape.height/(2.0*g_Box2D.scale));
+			var vertices = [];
+			for(var i = 0; i < body.number_vertices(); i++) {
+				vertices.push(new b2Vec2(body.shape.vertices[i].x/g_Box2D.scale, body.shape.vertices[i].y/g_Box2D.scale));
+			}
+			fixDef.shape.SetAsArray(vertices, body.number_vertices());
 			break;
-		case "Triangle":
+		case "Rectangle" :
 			fixDef.shape = new b2PolygonShape;
-			fixDef.shape.SetAsArray([new b2Vec2(body.shape.vertices[0]/g_Box2D.scale, body.shape.vertices[1]/g_Box2D.scale),
-								new b2Vec2(body.shape.vertices[2]/g_Box2D.scale, body.shape.vertices[3]/g_Box2D.scale),
-								new b2Vec2(body.shape.vertices[4]/g_Box2D.scale, body.shape.vertices[5]/g_Box2D.scale)], 3);
+			fixDef.shape.SetAsBox(body.shape.width/(2.0 * g_Box2D.scale), body.shape.height/(2.0 * g_Box2D.scale));
 			break;
-		case "Circle":	
+		/*case "Triangle" :
+			fixDef.shape = new b2PolygonShape;
+			fixDef.shape.SetAsArray([new b2Vec2(body.shape.vertices[0][0]/g_Box2D.scale, body.shape.vertices[0][1]/g_Box2D.scale),
+								new b2Vec2(body.shape.vertices[1][0]/g_Box2D.scale, body.shape.vertices[1][1]/g_Box2D.scale),
+								new b2Vec2(body.shape.vertices[2][0]/g_Box2D.scale, body.shape.vertices[2][1]/g_Box2D.scale)], 3);
+			break;*/
+		case "Circle" :
 			fixDef.shape = new b2CircleShape(body.shape.radius/g_Box2D.scale);
            	break;
 	}
@@ -169,7 +231,7 @@ function addBody(body) { //adds a body to the world
 	g_Box2D.body_count++;
 }
 function removeBody(id) {
-	for(i = 0; i < g_Box2D.body_count; i++) {
+	for(var i = 0; i < g_Box2D.body_count; i++) {
 		if(g_Box2D.bodies[i].id() == id) {
 			r_body = g_Box2D.bodies[i];
 			break;
@@ -187,7 +249,12 @@ function removeBody(id) {
 	g_Box2D.buffer_next.splice(i, 1);
 	g_Box2D.body_count--;
 }
-
+function getBodyList() { //get a list of bodies' ids
+	var body_list = [];
+	for(var i = 0; i < g_Box2D.body_count; i++)
+		body_list.push(g_Box2D.bodies[i].id());
+	return body_list;
+}
 /* ~ Box2D helper functions*/
 
 
@@ -228,15 +295,22 @@ function update() {
 function getVertices(shape) {
 	var vertices = [];
 	switch(shape.type) {
+		case "Polygon" : /*case "Triangle" :*/
+			for(var i = 0; i < shape.vertices.length; i++) {
+				vertices.push(shape.vertices[i].x, shape.vertices[i].y);
+			}
+			break;
 		case "Rectangle" :
 			vertices = [-shape.width/2, -shape.height/2,
 					-shape.width/2, shape.height/2,
 					shape.width/2, shape.height/2,
 					shape.width/2, -shape.height/2];
 			break;
-		case "Triangle" :
-			vertices = shape.vertices;
-			break;
+		/*case "Triangle" :
+			for(var i = 0; i < 3; i++) {
+				vertices.push(shape.vertices[i][0], shape.vertices[i][1]);
+			}
+			break;*/
 		case "Circle" :
 			for(i = 1; i <= 60; i++) {
 				vertices.push(shape.radius * Math.cos(degToRad(6*i)));
@@ -283,7 +357,7 @@ function tick() {
 	g_WebGL.physicsDt += dt;
 	g_WebGL.gl.clear(g_WebGL.gl.COLOR_BUFFER_BIT);
 	requestAnimFrame(tick);
-	for(i=0; i < g_Box2D.body_count; i++) {
+	for(i = 0; i < g_Box2D.body_count; i++) {
 		setColor(g_Box2D.bodies[i].color);
 		initBuffers(g_Box2D.bodies[i].shape.buffer);
 		animate(g_Box2D.bodies[i]);
@@ -303,7 +377,7 @@ function tick() {
 function initGL() {
 	// Get A WebGL context
 	g_WebGL.canvas = document.getElementById("canvas");
-	g_WebGL.gl = getWebGLContext(canvas);
+	g_WebGL.gl = getWebGLContext(g_WebGL.canvas);
 	if (!g_WebGL.gl) {
 		alert("WebGL init fail");
 	}
@@ -355,6 +429,10 @@ function drawScene(number_vertices) {
 function degToRad(n) {
 	return (Math.PI / 180) * n;
 }
+function liesIn(num, a, b) { //checks if num is a number and a <= num <= b
+	if(typeof num === "number" && (num >= a && num <= b)) return 1;
+	else return 0;
+}
 
 
 
@@ -363,14 +441,12 @@ function start() {
 	initGL();
 	initShaders();
 	initWorld();
-	g_WebGL.canvas.addEventListener("click", fetchCoords, false);
+	g_WebGL.canvas.addEventListener("click", fetchClickCoords, false);
+	g_WebGL.canvas.addEventListener("move", fetchMoveCoords, false);
 	//add some bodies
-	/*addBody(Body(b2Body.b2_dynamicBody, new CircleShape(60.0), new Vector2D(300.0, 500.0), 0, 
-		new Vector2D(0.0, 0.0), new Attributes(1.0, 0.5, 0.2), new Color(0.4, 0.5, 0.7)));*/
-	addBody(Body(b2Body.b2_dynamicBody, new RectangleShape(25.0, 46.0), new Vector2D(135.0, 150.0), 0.54, 
-		new Vector2D(0.0, 0.0), new Attributes(1.0, 0.5, 0.2), new Color(0.3, 0.3, 0.4), "id2"));
-	addBody(Body(b2Body.b2_staticBody, new RectangleShape(1000.0, 25.0), new Vector2D(350.0, 10.0), 0, 
-		new Vector2D(0.0, 0.0), new Attributes(1.0, 0.5, 0.2), new Color(0.5, 0.6, 0.6), "id1"));
+	addBody(Body(b2Body.b2_dynamicBody, new RectangleShape(25.0, 46.0), new Vector2D(135.0, 150.0), 0.54, new Vector2D(0.0, 0.0), new Attributes(1.0, 0.5, 0.2), new Color(1.0, 0.5, 0.0), "id2"));
+	addBody(Body(b2Body.b2_staticBody, new RectangleShape(1000.0, 25.0), new Vector2D(350.0, 10.0), 0, new Vector2D(0.0, 0.0), new Attributes(1.0, 0.5, 0.2), new Color(0.2, 0.5, 1.0), "id1"));
+	addBody(Body(b2Body.b2_dynamicBody, new PolygonShape([new Vector2D(30.0, 30.0), new Vector2D(-30.0, 30.0), new Vector2D(-10.0, -17.0)]), new Vector2D(370.0, 300.0), 0.5, new Vector2D(0.0, 0.0), new Attributes(1.0, 0.5, 0.2), new Color(0.75, 0.2, 0.5), "id3"));
 	//setup debug draw
 	/*var debugDraw = new b2DebugDraw();
 		debugDraw.SetSprite(document.getElementById("canvas").getContext("2d"));

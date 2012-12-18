@@ -2,15 +2,26 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>SchemePhysics</title>
+	<title>Scheme-Physics</title>
 	<link href="style.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
-	<canvas id="canvas" width = 500 height = 500></canvas>
-	<textarea rows = 25 cols = 55 id = "input" class = "text_box"></textarea>
-	<textarea rows = 10 cols = 30 id = "output" disabled = "disabled" class = "text_box"></textarea>
-	<input type = "button" id = "eval_btn" value = "Evaluate" style = "float : left"></input>
-	<input type = "button" id = "sample_btn" value = "Sample Code"></input>
+	<div class = "world">
+		<p class = "labels">World</p>
+		<canvas id = "canvas" width = 500 height = 500></canvas>
+	</div>
+	<div class = "in">
+		<p class = "labels">Code</p>
+		<textarea id = "input" spellcheck = "false"></textarea>
+		<div style = "text-align : center">
+			<input type = "button" id = "eval_btn" class = "button" value = "Evaluate"></input><br />
+			<input type = "button" id = "sample_btn" class = "button" value = "Sample Code"></input>
+		</div>
+	</div>
+	<div class = "out">
+		<p class = "labels">Logs</p>
+		<textarea id = "output" disabled = "disabled" spellcheck = "false"></textarea>
+	</div>
 	<script type="text/javascript" src="dep/webgl-utils.js"></script>
 	<script type="text/javascript" src="dep/Box2dWeb-2.1.a.3.js"></script>
 	<script type="text/javascript" src="dep/biwascheme.js" ></script>
@@ -63,18 +74,20 @@
 		(define dynamic "dynamic")
 		(define static "static")
 		(define (rect-shape width height)
-				(list width height))
+			(list width height))
 		(define (circle-shape radius)
-				(list radius))
+			(list radius))
+		(define (polygon-shape . vertices)
+			vertices)
 		(define (attributes density friction restitution)
-				(list density friction restitution))
+			(list density friction restitution))
 		(define (color r g b)
-				(list r g b))
+			(list r g b))
 		(define (vector2 x y)
-				(list x y))
-		(define (angle ang)
-				(list ang))
+			(list x y))
 		(define click "click")
+		(define mouseover "mouseover")
+		(define mouseout "mouseout")
 	</script>
 	
 	<!-- Sample code (do not tab)-->
@@ -84,13 +97,32 @@
 ;;attributes density friction restitution
 ;;vector2 x y
 ;;color red green blue
-;;Every body needs an id using which you may refer to it
+;;Every body needs an id with which you may refer to it
+
 (define b-shape (rect-shape 50.0 40.0))
-(define b-attribs (attributes 1.0 0.5 0.5))
-(define b-position (vector2 200.0 400.0))
+(define b-attribs (attributes 1.0 0.5 0.3))
+(define b-position (vector2 50.0 400.0))
 (define b-color (color 0.3 0.4 0.65))
-(define b-angle (angle 0.55))
+(define b-angle 0.15)
 (define id "id3")
+
+(add-body dynamic b-shape b-position b-angle b-attribs b-color id)
+
+(set! b-shape (circle-shape 30.0))
+(set! b-attribs (attributes 0.5 0.5 1.0))
+(set! b-position (vector2 400.0 200.0))
+(set! b-color (color 1.0 0.1 0.3))
+(set! b-angle 0.4)
+(set! id "id4")
+
+(add-body dynamic b-shape b-position b-angle b-attribs b-color id)
+
+(set! b-shape (polygon-shape (vector2 30.0 40.0) (vector2 10.0 -30.0) (vector2 60.0 0.0) (vector2 80.0 60.0) (vector2 70.0 80.0)))
+(set! b-attribs (attributes 1.0 0.5 0.5))
+(set! b-position (vector2 100.0 320.0))
+(set! b-color (color 0.67 1.0 0.18))
+(set! b-angle 0.2)
+(set! id "id5")
 
 (add-body dynamic b-shape b-position b-angle b-attribs b-color id)
 	</script>

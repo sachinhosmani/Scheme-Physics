@@ -185,12 +185,12 @@ var getWebGLContext = function(canvas, opt_attribs) {
     // make the canvas backing store the size it's displayed.
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
-  } else {
+  } /*else {
     var title = document.title;
     var h1 = document.createElement("h1");
     h1.innerText = title;
     document.body.insertBefore(h1, document.body.children[0]);
-  }
+  }*/
 
   var gl = setupWebGL(canvas, opt_attribs);
   return gl;

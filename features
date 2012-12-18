@@ -3,19 +3,29 @@ Implemented Functions :
 1. add-body (adds a body to the world)
 2. remove-body (removes a body of given id from the world)
 3. alert (invokes alert)
-4. remove-clicked (removes a body when clicked on it; should be added as an event handler to click using "on")
-5. alert-coords (alerts click co-ordinates; should be added as an event handler to click using "on")
+4. remove-clicked (removes the last clicked body) 					<=> (remove-body id-clicked) 
+5. click-coords (a list of coordinates of the last click on canvas)		<=> (list x-click y-click)
+6. alert-coords (alerts last clicked coordinates) 					<=> (alert (click-coords))
 
-6. on :
-        when the 1st argument happens, code enclosed in 2nd argument is evaluated 
-        (adds the event handler to the event)
+7. on (adds an event handler)
+		when the 1st argument happens, code enclosed in 2nd argument is evaluated 
+		(adds the event handler to the event)
+		Supported handlers :
+			-> "click" (e.g : (on click "(remove id-clicked)")
+			
+8. ~on (removes event handler(s) , undoes 'on')
 
-        ->supports "click" (e.g : (on click "(remove-clicked)"))
+9. handler-data (returns a list of all handlers of event(s))
 
-7. bg-color (changes the background color)
+10. bg-color (changes the background color)
+11. body-color (changes a body's color)
+12. random (returns a random number)
+
 
 Implemented Variables :
 
 1. x-click & y-click (coordinates of the last click on canvas)
 2. body-count (number of bodies in the world)
+3. body-list (list of ids of all bodies in defined in the world)
 3. canvas-width & canvas-height (dimensions of the HTML5 canvas in pixels)
+4. id-clicked (id of the last clicked body)

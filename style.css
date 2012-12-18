@@ -1,17 +1,37 @@
-#canvas {
+.world {
 	float : left;
-	border :1px solid black;
+	width : 500px;
+	margin-left : 20px;
+}
+.in {
+	float : left;
+	width : 400px;
+	margin-left : 20px;
+}
+.out {
+	float : left;
+	width : 300px;
+	margin-left : 20px;
+}
+.labels {
+	font-size : 22px;
+	font-family: 'Monaco','Menlo','Ubuntu Mono','Droid Sans Mono','Consolas',monospace;
+	text-align : center;
+}
+#canvas {
+	border : 1px solid black;
 }
 #input {
+	width : 100%;
+	height : 500px;
 	font-size: 14px;
 	font-family: 'Monaco','Menlo','Ubuntu Mono','Droid Sans Mono','Consolas',monospace;
-	float : left;
-	margin-left : 30px;
 	resize : none;
 }
 #output {
+	width : 100%;
+	height : 200px;
 	font-size : 16px;
 	font-family: 'Monaco','Menlo','Ubuntu Mono','Droid Sans Mono','Consolas',monospace;
-	margin-left : 30px;
 	resize : none;
 }
