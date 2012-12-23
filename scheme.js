@@ -6,25 +6,55 @@ var g_Scheme = {
 };
 
 //mouse click manager
-var clickHandler = function() {
-	var xClick, yClick; //private
+g_Helper.clickHandler = function() {
+	var xUp, yUp, xDown, yDown; //private
 	return {
-		setX : function(x) {
-			xClick = x;
+		setXUp : function(x) {
+			xUp = x;
 		} ,
-		setY : function(y) {
-			yClick = y; 
+		setYUp : function(y) {
+			yUp = y; 
 		} ,
-		getX : function() {
-			return xClick;
+		getXUp : function() {
+			return xUp;
 		} ,
-		getY : function() {
-			return yClick;
+		getYUp : function() {
+			return yUp;
+		} ,
+		setXDown : function(x) {
+			xDown = x;
+		} ,
+		setYDown : function(y) {
+			yDown = y; 
+		} ,
+		getXDown : function() {
+			return xDown;
+		} ,
+		getYDown : function() {
+			return yDown;
+		}
+	};
+}();
+//keyboard events manager
+g_Helper.keyHandler = function() {
+	var keyUp, keyDown; //private
+	return {
+		setUp : function(key) {
+			keyUp = key;
+		} ,
+		setDown : function(key) {
+			keyDown = key;
+		} ,
+		getUp : function() {
+			return keyUp;
+		} ,
+		getDown : function() {
+			return keyDown;
 		}
 	};
 }();
 //mouse move manager
-var moveHandler = function() {
+g_Helper.moveHandler = function() {
 	var xBefore, yBefore, xAfter, yAfter; //private
 	return {
 		setX : function(x) {
@@ -43,7 +73,27 @@ var moveHandler = function() {
 		}
 	};
 }();
-
+g_Scheme.updateClickVars = function() {
+	//Update Scheme click variables
+	BiwaScheme.CoreEnv["x-down"] = g_Helper.clickHandler.getXDown();
+	BiwaScheme.CoreEnv["y-down"] = g_Helper.clickHandler.getYDown();
+	BiwaScheme.CoreEnv["x-up"] = g_Helper.clickHandler.getXUp();
+	BiwaScheme.CoreEnv["y-up"] = g_Helper.clickHandler.getYUp();
+	var bodyUp = g_Box2D.findBodyAt(g_Box2D.vector2D(g_Helper.clickHandler.getXUp(), g_Helper.clickHandler.getYUp()));
+	var bodyDown = g_Box2D.findBodyAt(g_Box2D.vector2D(g_Helper.clickHandler.getXDown(), g_Helper.clickHandler.getYDown()));
+	BiwaScheme.CoreEnv["id-mouse-up"] = (bodyUp && bodyUp.id());
+	BiwaScheme.CoreEnv["id-mouse-down"] = (bodyDown && bodyDown.id());
+};
+g_Scheme.updateKeyVars = function() {
+	//Update Scheme keyboard variables
+	BiwaScheme.CoreEnv["key-up"] = g_Helper.keyHandler.getUp();
+	BiwaScheme.CoreEnv["key-down"] = g_Helper.keyHandler.getDown();
+};
+g_Scheme.updateBodyVars = function() {
+	//Update body click variables
+	BiwaScheme.CoreEnv["body-list"] = BiwaScheme.array_to_list(g_Box2D.getBodyList());
+	BiwaScheme.CoreEnv["body-count"] = g_Box2D.body_count;
+};
 $(document).ready(
 	function() {
 		g_Scheme.input = $("#input");
@@ -51,34 +101,35 @@ $(document).ready(
 		g_Scheme.interpreter = new BiwaScheme.Interpreter(function(e, state) {
 			g_Scheme.output.css("color", "red");
 			g_Scheme.output.val(g_Scheme.output.val() + e.message + '\n'); //error messages
+			g_Scheme.output[0].scrollTop = g_Scheme.output[0].scrollHeight;
 		});
-		g_Scheme.interpreter.evaluate($("#basic_functions").text()); //evaluate the basic functions which the user uses
-		
-		/*Scheme environment variables*/
-		BiwaScheme.CoreEnv["x-click"] = clickHandler.getX();
-		BiwaScheme.CoreEnv["y-click"] = clickHandler.getY();
-		BiwaScheme.CoreEnv["body-count"] = g_Box2D.body_count;
+		//Scheme environment variables
+		g_Scheme.updateClickVars();
+		g_Scheme.updateBodyVars();
+		g_Scheme.updateKeyVars();
 		BiwaScheme.CoreEnv["canvas-width"] = canvas_width;
 		BiwaScheme.CoreEnv["canvas-height"] = canvas_height;
-		BiwaScheme.CoreEnv["body-list"] = array_to_list(getBodyList());
-		var bodyClicked = findBodyAt(new Vector2D(clickHandler.getX(), clickHandler.getY()));
-		BiwaScheme.CoreEnv["id-clicked"] = bodyClicked && bodyClicked.id();
+		
+		g_Scheme.interpreter.evaluate($("#basic_functions").text()); //evaluate the basic functions which the user uses
 });
 $("#eval_btn").click(function() {
-  	scheme_eval();
+  	g_Scheme.schemeEval();
 });
 $("#sample_btn").click(function() {
-	load_code("sample"); //to load 'sample code'
+	g_Helper.loadCode("sample"); //to load 'sample code'
 });
-function load_code(id) {
+$("#clear_btn").click(function() {
+	g_Scheme.output.val("");
+});
+g_Helper.loadCode = function(id) {
 	g_Scheme.input.val($("#" + id).text());
 }
+g_Scheme.listToArray = function(list) {
 //converts scheme list to javascript array (vice-versa implemented in BiwaScheme)
-function listToArray(list) {
 	var tokens = [];
 	var tmp = list.car;
 	if(typeof tmp === "object") {
-		tokens.push(listToArray(tmp));
+		tokens.push(g_Scheme.listToArray(tmp));
 	}
 	else if(typeof tmp === "number") {
 		tokens.push(tmp);
@@ -87,7 +138,7 @@ function listToArray(list) {
 		return [];
 	}
 	if(list.cdr) {
-		tokens = tokens.concat(listToArray(list.cdr));
+		tokens = tokens.concat(g_Scheme.listToArray(list.cdr));
 	}
 	return tokens;
 }
@@ -96,11 +147,12 @@ function listToArray(list) {
 
 
 /*Scheme evaluator*/
-function unbalanced_parentheses(code) {
+g_Scheme.unbalancedParentheses = function(code) {
+	//tells if parentheses are balanced
 	var tokens = (new BiwaScheme.Parser(code)).tokens;
 	var parentheses = 0;
 	var brakets = 0;
-	for(var i = 0; i < tokens.length; ++i) {
+	for(var i = 0; i < tokens.length; i++) {
 		switch(tokens[i]) {
 			case "[": ++brakets; break;
 			case "]": --brakets; break;
@@ -110,10 +162,11 @@ function unbalanced_parentheses(code) {
 	}
 	return parentheses != 0 || brakets != 0;
 }
-function scheme_eval() { //called everytime 'Evaluate' button is clicked
-	if(unbalanced_parentheses(g_Scheme.input.val())) {
+g_Scheme.schemeEval = function() { //called everytime 'Evaluate' button is clicked
+	if(g_Scheme.unbalancedParentheses(g_Scheme.input.val())) {
 		g_Scheme.output.css("color", "red");
 		g_Scheme.output.val(g_Scheme.output.val() + "Unbalanced Parentheses" + '\n');
+		g_Scheme.output[0].scrollTop = g_Scheme.output[0].scrollHeight;
 	}
 	else {
 		g_Scheme.interpreter.evaluate(g_Scheme.input.val(),
@@ -139,118 +192,179 @@ BiwaScheme.define_libfunc("alert", 1, 1, function(args) {
 	alert(args[0]);
 	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("add-body", 7, 7, function(args) { //adds a body to the world
+BiwaScheme.define_libfunc("add-body", 7, 8, function(args) {
+	//adds a body to the world
+	//arguments : body type, shape, initial position, initial angle, attributes, color, id, (opt.)initial velocity
 	var body_type;
 	if(args[0] === "static")
 		body_type = b2Body.b2_staticBody;
 	else if(args[0] === "dynamic")
 		body_type = b2Body.b2_dynamicBody;
 
-	var shape = listToArray(args[1]);
-	var position = listToArray(args[2]);
+	var shape = g_Scheme.listToArray(args[1]);
+	var position = g_Scheme.listToArray(args[2]);
 	var angle = args[3];
-	var attributes = listToArray(args[4]);
-	var color = listToArray(args[5]);
+	var attributes = g_Scheme.listToArray(args[4]);
+	var color = g_Scheme.listToArray(args[5]);
 	var id = args[6];
+	if(args.length === 8) {
+		//if initial vel was specified
+		var vel2 = g_Scheme.listToArray(args[7]);
+		var vel = g_Box2D.vector2D(vel2[0], vel2[1]);
+	}
+	else {
+		//assume 0 initial vel
+		var vel = g_Box2D.vector2D(0.0, 0.0);
+	}
 	if(shape.length === 2) {//if rectangle
-		addBody(Body(body_type, new RectangleShape(shape[0], shape[1]), new Vector2D(position[0], position[1]), angle, new Vector2D(0.0, 0.0), new Attributes(attributes[0], attributes[1], attributes[2]), new Color(color[0], color[1], color[2]), id));
+		(g_Box2D.createBody(body_type, g_Box2D.rectangleShape(shape[0], shape[1]), g_Box2D.vector2D(position[0], position[1]), angle, vel, g_Box2D.attributes(attributes[0], attributes[1], attributes[2]), g_Box2D.color(color[0], color[1], color[2]), id)).add();
 	}
 	else if(shape.length === 1) {//if circle
-		addBody(Body(body_type, new CircleShape(shape[0]), new Vector2D(position[0], position[1]), angle, new Vector2D(0.0, 0.0), new Attributes(attributes[0], attributes[1], attributes[2]), new Color(color[0], color[1], color[2]), id));
+		(g_Box2D.createBody(body_type, g_Box2D.circleShape(shape[0]), g_Box2D.vector2D(position[0], position[1]), angle, vel, g_Box2D.attributes(attributes[0], attributes[1], attributes[2]), g_Box2D.color(color[0], color[1], color[2]), id)).add();
 	}
-	/*else if(shape.length === 3) { //if triangle
-		addBody(Body(body_type, new TriangleShape([new Vector2D(listToArray(shape[0])), listToArray(shape[1]), listToArray(shape[2])]), new Vector2D(position[0], position[1]), angle, new Vector2D(0.0, 0.0), new Attributes(attributes[0], attributes[1], attributes[2]), new Color(color[0], color[1], color[2]), id));
-	}*/
 	else if(shape.length > 2) { //if polygon
 		var tmp = [];
 		for(var i = 0; i < shape.length; i++) {
-			tmp.push(new Vector2D(shape[i][0], shape[i][1]));
+			tmp.push(g_Box2D.vector2D(shape[i][0], shape[i][1]));
 		}
-		addBody(Body(body_type, new PolygonShape(tmp), new Vector2D(position[0], position[1]), angle, new Vector2D(0.0, 0.0), new Attributes(attributes[0], attributes[1], attributes[2]), new Color(color[0], color[1], color[2]), id));
+		(g_Box2D.createBody(body_type, g_Box2D.polygonShape(tmp), g_Box2D.vector2D(position[0], position[1]), angle, vel, g_Box2D.attributes(attributes[0], attributes[1], attributes[2]), g_Box2D.color(color[0], color[1], color[2]), id)).add();
 	}
 	/*Update Scheme body-count and body-list*/
-	BiwaScheme.CoreEnv["body-count"] = g_Box2D.body_count;
-	BiwaScheme.CoreEnv["body-list"] = array_to_list(getBodyList());
+	g_Scheme.updateBodyVars();
 	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("remove-body", 1, 1, function(args) { //removes a body (id to be passed)
-	removeBody(args[0]);
+BiwaScheme.define_libfunc("remove-body", 1, 1, function(args) {
+	//removes a body (id to be passed)
+	g_Box2D.removeBody(args[0]);
 	
 	/*Update Scheme body-count and body-list*/
-	BiwaScheme.CoreEnv["body-count"] = g_Box2D.body_count;
-	BiwaScheme.CoreEnv["body-list"] = array_to_list(getBodyList());
+	g_Scheme.updateBodyVars();
+	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("remove-bodies", 1, 1, function(args) { //removes a list of bodies
-	var bodies_remove = listToArray(args[0]);
-	for(var i = 0; i < bodies_remove.length; i++)
-		removeBody(bodies_remove[i]);
-
-	/*Update Scheme body-count and body-list*/
-	BiwaScheme.CoreEnv["body-count"] = g_Box2D.body_count;
-	BiwaScheme.CoreEnv["body-list"] = array_to_list(getBodyList());
-});
-BiwaScheme.define_libfunc("remove-clicked", 0, 0, function() { //removes last clicked object
-	body_remove = findBodyAt(new Vector2D(clickHandler.getX(), clickHandler.getY()));
+BiwaScheme.define_libfunc("remove-clicked", 0, 0, function() {
+	//removes last clicked object
+	body_remove = g_Box2D.findBodyAt(g_Box2D.vector2D(g_Helper.clickHandler.getXUp(), g_Helper.clickHandler.getYUp()));
 	if(body_remove !== undefined)
-		removeBody(body_remove.id());
+		g_Box2D.removeBody(body_remove.id());
 	/*Update Scheme body-count and body-list*/
-	BiwaScheme.CoreEnv["body-count"] = g_Box2D.body_count;
-	BiwaScheme.CoreEnv["body-list"] = array_to_list(getBodyList());
+	g_Scheme.updateBodyVars();
+	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("body-color", 2, 2, function(args) { //changes a body's color
-	var color_arr = listToArray(args[1]);
+BiwaScheme.define_libfunc("body-color", 2, 2, function(args) {
+	//changes a body's color
+	var color_arr = g_Scheme.listToArray(args[1]);
 	var id = args[0];
-	c_body = findBody(id);
-	if(c_body != undefined && (liesIn(color_arr[0], 0, 1) && liesIn(color_arr[1], 0, 1) && liesIn(color_arr[2], 0, 1))) {
-		c_body.color = new Color(color_arr[0], color_arr[1], color_arr[2]);
+	c_body = g_Box2D.bodies[g_Box2D.findBodyIndex(id)];
+	if(c_body != undefined && (g_Helper.liesIn(color_arr[0], 0, 1) && g_Helper.liesIn(color_arr[1], 0, 1) && g_Helper.liesIn(color_arr[2], 0, 1))) {
+		c_body.color = g_Box2D.color(color_arr[0], color_arr[1], color_arr[2]);
 	}
+	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("bg-color", 1, 1, function(args) { //changes the bg-color of the canvas
-	var bg_color = listToArray(args[0]);
-	if(liesIn(bg_color[0], 0, 1) && liesIn(bg_color[1], 0, 1) && liesIn(bg_color[2], 0, 1))
+BiwaScheme.define_libfunc("bg-color", 1, 1, function(args) {
+	//changes the bg-color of the canvas
+	var bg_color = g_Scheme.listToArray(args[0]);
+	if(g_Helper.liesIn(bg_color[0], 0, 1) && g_Helper.liesIn(bg_color[1], 0, 1) && g_Helper.liesIn(bg_color[2], 0, 1)) {
 		g_WebGL.gl.clearColor(bg_color[0], bg_color[1], bg_color[2], 1.0);
+	}
+	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("on", 2, 2, function(args) { //adds event handler function (on event "handling code")
-	if(args[0] !== "click") return;
-	handlerManager.addHandler(args[0], args[1]);
+BiwaScheme.define_libfunc("on", 2, 2, function(args) {
+	//adds event handler function (on event "handling code")
+	if(args[0] !== "mouseup" && args[0] !== "mousedown" && args[0] !== "keydown" && args[0] !== "keyup") {
+		return;
+	}
+	g_Scheme.handlerManager.addHandler(args[0], args[1]);
+	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("~on", 1, 2, function(args) { //removes event handler
-	if(args[0] !== "click") return;
+BiwaScheme.define_libfunc("~on", 1, 2, function(args) {
+	//removes event handler
+	if(args[0] !== "mouseup" && args[0] !== "mousedown" && args[0] !== "keydown" && args[0] !== "keyup") {
+		return;
+	}
 	if(args.length === 2) {
-		handlerManager.removeHandler(args[0], args[1]);
+		g_Scheme.handlerManager.removeHandler(args[0], args[1]);
 	}
 	else {
-		handlerManager.removeHandler(args[0]);
+		g_Scheme.handlerManager.removeHandler(args[0]);
 	}
-
+	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("handler-data", 0, 1, function(args) { //lists all added handlers to various events
+BiwaScheme.define_libfunc("handler-data", 0, 1, function(args) {
+	//lists all added handlers to various events
 	if(args.length === 0) {
-		var data = handlerManager.allHandlerData();
+		var data = g_Scheme.handlerManager.allHandlerData();
 		var tmp = [];
 		for(var i in data) {
 			if(data.hasOwnProperty(i)) {
-				tmp.push(array_to_list(data[i]));
+				tmp.push(BiwaScheme.array_to_list(data[i]));
 			}
 		}
-		return array_to_list(tmp);
+		return BiwaScheme.array_to_list(tmp);
 	}
 	else {
-		return array_to_list(handlerManager.allHandlerData(args[0]));
+		return BiwaScheme.array_to_list(g_Scheme.handlerManager.allHandlerData(args[0]));
 	}
 });
 BiwaScheme.define_libfunc("alert-click-coords", 0, 0, function() {
-	alert(clickHandler.getX() + " " + clickHandler.getY());
+	//alerts last clicked coordinates
+	alert(g_Helper.clickHandler.getXUp() + " " + g_Helper.clickHandler.getYUp());
+	return BiwaScheme.undef;
 });
 BiwaScheme.define_libfunc("click-coords", 0, 0, function() {
-	var coords = [typeof clickHandler.getX() === "number" ? clickHandler.getX() : "undefined", typeof clickHandler.getY() === "number" ? clickHandler.getY() : "undefined"];
-	return array_to_list(coords);
+	//Scheme list of last clicked coordinates
+	var coords = [typeof g_Helper.clickHandler.getXUp() === "number" ? g_Helper.clickHandler.getXUp() : "undefined", typeof g_Helper.clickHandler.getYUp() === "number" ? g_Helper.clickHandler.getYUp() : "undefined"];
+	return BiwaScheme.array_to_list(coords);
 });
 BiwaScheme.define_libfunc("random", 0, 2, function(args) {
+	//return a random number between the arguments specified (0, 1 assumed if not specified)
 	if(args.length === 2)
-		return (typeof args[0] === "number" && typeof args[1] === "number") ? getRandom(args[0], args[1]) : Math.random();
+		return (typeof args[0] === "number" && typeof args[1] === "number") ? g_Helper.getRandom(args[0], args[1]) : Math.random();
 	else
 		return Math.random();
+});
+BiwaScheme.define_libfunc("apply-impulse", 2, 3, function(args) {
+	//body's id, impulse vector, (opt.)point of application of impulse
+	var impulse = g_Scheme.listToArray(args[1]);
+	if(impulse.length !== 2) {
+		return BiwaScheme.undef;
+	}
+	if(args.length === 3) {
+		var point = g_Scheme.listToArray(args[2]);
+		g_Box2D.applyImpulse(args[0], g_Box2D.vector2D(impulse[0], impulse[1]), g_Box2D.vector2D(point[0], point[1]));
+	}
+	else {
+		g_Box2D.applyImpulse(args[0], g_Box2D.vector2D(impulse[0], impulse[1]));
+	}
+	return BiwaScheme.undef;
+});
+BiwaScheme.define_libfunc("apply-force", 3, 4, function(args) {
+	//arguments : body's id, impulse vector, (opt.)point of application of impulse
+	var force = g_Scheme.listToArray(args[1]);
+	var time = args[2];
+	if(!g_Helper.liesIn(time, g_Box2D.time_step, Infinity)) {
+		return BiwaScheme.undef;
+	}
+	if(force.length !== 2) {
+		return BiwaScheme.undef;
+	}
+	if(args.length === 3) {
+		var point = g_Scheme.listToArray(args[2]);
+		g_Box2D.applyForce(args[0], g_Box2D.vector2D(force[0], force[1]), time, g_Box2D.vector2D(point[0], point[1]));
+	}
+	else {
+		g_Box2D.applyImpulse(args[0], g_Box2D.vector2D(force[0], force[1]), time);
+	}
+	return BiwaScheme.undef;
+});
+BiwaScheme.define_libfunc("set-linear-velocity", 2, 2, function(args) {
+	//id, vector2 velocity
+	var body = g_Box2D.bodyMap(args[0]);
+	var vel = g_Scheme.listToArray(args[1]);
+	if(vel.length !== 2 || typeof vel[0] !== "number" || typeof vel[1] !== "number") {
+		return;
+	}
+	body.SetLinearVelocity(new b2Vec2(vel[0]/g_Box2D.scale, vel[1]/g_Box2D.scale));
+	return BiwaScheme.undef;
 });
 /* ~ Mappings*/
 
@@ -259,21 +373,22 @@ BiwaScheme.define_libfunc("random", 0, 2, function(args) {
 
 
 
-function getRandom(a, b) { //returns a random number between a and b
+g_Helper.getRandom = function(a, b) { //returns a random number between a and b
 	return Math.random() * Math.abs(a - b) + Math.min(a, b);
 }
 String.prototype.splice = function(index, remove, add) {
 	return this.slice(0, index) + add + this.slice(Math.abs(remove) + index);
 }
-/*function display(something) { //displays something on the output console
+/*g_Helper.display = function(something) { //displays something on the output console
 	g_Scheme.output.css("color", "green");
 	g_Scheme.output.val(g_Scheme.output.val() + something + '\n');
 	g_Scheme.output[0].scrollTop = g_Scheme.output[0].scrollHeight; 
 }*/
 
 //keeps store of references to event handler functions for use during removal
-var handlerManager = (function() {
+g_Scheme.handlerManager = (function() {
 	var handlerStore = (function() {
+		//stores everything in 'details' and has retrieval methods 
 		var details = {};
 		return {
 			recordHandler : 
@@ -285,7 +400,25 @@ var handlerManager = (function() {
 						details[event][scheme_code] = call_back;
 						return 1; //added
 					}
-					return 0; //not added
+					return 0; //not added (was there before)
+				} ,
+			eraseHandler : //erase handler from 'details'
+				function(event, scheme_code) {
+					if(scheme_code !== undefined) {
+						delete details[event][scheme_code];
+						var ctr = 0;
+						for(var i in details[event]) {
+							if(details[event].hasOwnProperty(i)) {
+								ctr++;
+							}
+						}
+						if(ctr === 0) {
+							delete details[event];
+						}
+					}
+					else {
+						delete details[event];
+					}
 				} ,
 			retrieveCallBack : 
 				function(event, scheme_code) {
@@ -334,18 +467,21 @@ var handlerManager = (function() {
 					g_Scheme.interpreter.evaluate(scheme_code);
 				};
 				if(handlerStore.recordHandler(event, evalSchemeCode, scheme_code)) {
+				//only if handler wasn't added before
 					g_WebGL.canvas.addEventListener(event, evalSchemeCode, false);
 				}
 			} ,
 		removeHandler : 
 			function(event, scheme_code) {
 				if(scheme_code) {
-					//retrieve the call_back reference from the handlerStore
+				//retrieve the call_back reference from the handlerStore
 					var call_back = handlerStore.retrieveCallBack(event, scheme_code);
+					handlerStore.eraseHandler(event, scheme_code);
 					g_WebGL.canvas.removeEventListener(event, call_back, false);
 				}
 				else {
 					var call_backs = handlerStore.listCallBacks(event);
+					handlerStore.eraseHandler(event);
 					for(var i = 0; i < call_backs.length; i++) {
 						g_WebGL.canvas.removeEventListener(event, call_backs[i], false);
 					}
@@ -357,17 +493,35 @@ var handlerManager = (function() {
 			}
 	}
 })();
-function fetchClickCoords(event) { //called everytime there is a click on the canvas
-	clickHandler.setX(event.clientX - canvas.offsetLeft);
-	clickHandler.setY(canvas_height - (event.clientY - canvas.offsetTop));
+g_Helper.fetchMouseDown = function(event) {
+//called everytime there is a click on the canvas
+	g_Helper.clickHandler.setXDown(event.clientX - canvas.offsetLeft);
+	g_Helper.clickHandler.setYDown(canvas_height - (event.clientY - canvas.offsetTop));
+	g_Scheme.updateClickVars();
+};
+g_Helper.fetchMouseUp = function(event) {
+//called everytime there is a click on the canvas
+	g_Helper.clickHandler.setXUp(event.clientX - canvas.offsetLeft);
+	g_Helper.clickHandler.setYUp(canvas_height - (event.clientY - canvas.offsetTop));
+	g_Scheme.updateClickVars();
+};
+g_Helper.fetchMoveCoords = function(event) {
+//called everytime there is a click on the canvas
+	g_Helper.moveHandler.setX(event.clientX - canvas.offsetLeft);
+	g_Helper.moveHandler.setY(canvas_height - (event.clientY - canvas.offsetTop));
+};
+g_Helper.fetchKeyDown = function(event) {
+//called everytime there is a key down
+	g_Helper.keyHandler.setDown(event.keyCode);
+	g_Scheme.updateKeyVars();
+};
+g_Helper.fetchKeyUp = function(event) {
+//called everytime there is a key up
+	g_Helper.keyHandler.setUp(event.keyCode);
+	g_Scheme.updateKeyVars();
+};
 	
-	/*Update Scheme click variables*/
-	BiwaScheme.CoreEnv["x-click"] = clickHandler.getX();
-	BiwaScheme.CoreEnv["y-click"] = clickHandler.getY();
-	var bodyClicked = findBodyAt(new Vector2D(clickHandler.getX(), clickHandler.getY()));
-	BiwaScheme.CoreEnv["id-clicked"] = (bodyClicked && bodyClicked.id());
-}
-function fetchMoveCoords(event) { //called everytime there is a click on the canvas
-	moveHandler.setX(event.clientX - canvas.offsetLeft);
-	moveHandler.setY(canvas_height - (event.clientY - canvas.offsetTop));
-}
+	
+	
+	
+	

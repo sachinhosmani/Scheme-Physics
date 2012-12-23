@@ -3,15 +3,18 @@ Implemented Functions :
 1. add-body (adds a body to the world)
 2. remove-body (removes a body of given id from the world)
 3. alert (invokes alert)
-4. remove-clicked (removes the last clicked body) 					<=> (remove-body id-clicked) 
-5. click-coords (a list of coordinates of the last click on canvas)		<=> (list x-click y-click)
-6. alert-coords (alerts last clicked coordinates) 					<=> (alert (click-coords))
+4. remove-clicked (removes the last clicked body) 						<=> (remove-body id-mouse-up) 
+5. click-coords (a list of coordinates of the last mouse up on canvas)		<=> (list x-up y-up)
+6. alert-coords (alerts last clicked coordinates) 						<=> (alert (click-coords))
 
 7. on (adds an event handler)
 		when the 1st argument happens, code enclosed in 2nd argument is evaluated 
 		(adds the event handler to the event)
 		Supported handlers :
-			-> "click" (e.g : (on click "(remove id-clicked)")
+			-> mouseup (e.g : (on mouseup "(remove id-mouse-up)")
+			-> mousedown (e.g : (on mousedown "(remove id-mouse-down)")
+			-> keydown (e.g : (on keydown "(if (= key-down 65) (apply-impulse "id3" (vector2 50.0 50.0)))")
+			-> keyup (e.g : (on keyup "(if (= key-up 65) (apply-impulse "id3" (vector2 50.0 50.0)))")
 			
 8. ~on (removes event handler(s) , undoes 'on')
 
@@ -21,11 +24,19 @@ Implemented Functions :
 11. body-color (changes a body's color)
 12. random (returns a random number)
 
+13. apply-impulse (apply impulse and change the momentum of a body)
+	e.g : (apply-impulse "id3" (vector2 10.0 150.0))
+14. apply-force (apply force for a required period of time on a body)
+	e.g : (apply-force "id3" (vector2 1000.0 150.0) 5000) -> applies force for 5000 ms
 
 Implemented Variables :
 
-1. x-click & y-click (coordinates of the last click on canvas)
-2. body-count (number of bodies in the world)
-3. body-list (list of ids of all bodies in defined in the world)
-3. canvas-width & canvas-height (dimensions of the HTML5 canvas in pixels)
-4. id-clicked (id of the last clicked body)
+1. x-up & y-up (coordinates of the last mouse up on canvas)
+2. x-down & y-down (coordinates of the last mouse down on canvas)
+3. body-count (number of bodies in the world)
+4. body-list (list of ids of all bodies in defined in the world)
+5. canvas-width & canvas-height (dimensions of the HTML5 canvas in pixels)
+6. id-mouse-up (id of the last mouse up body)
+7. id-mouse-down (id of the last mouse down body)
+8. key-down (code of the last pressed key)
+9. key-up (code of released key)

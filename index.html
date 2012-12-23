@@ -8,7 +8,7 @@
 <body>
 	<div class = "world">
 		<p class = "labels">World</p>
-		<canvas id = "canvas" width = 500 height = 500></canvas>
+		<canvas id = "canvas" width = 500 height = 500 tabindex="1"></canvas>
 	</div>
 	<div class = "in">
 		<p class = "labels">Code</p>
@@ -21,6 +21,9 @@
 	<div class = "out">
 		<p class = "labels">Logs</p>
 		<textarea id = "output" disabled = "disabled" spellcheck = "false"></textarea>
+		<div style = "text-align : center">
+			<input type = "button" id = "clear_btn" class = "button" value = "Clear"></input>
+		</div>
 	</div>
 	<script type="text/javascript" src="dep/webgl-utils.js"></script>
 	<script type="text/javascript" src="dep/Box2dWeb-2.1.a.3.js"></script>
@@ -85,7 +88,10 @@
 			(list r g b))
 		(define (vector2 x y)
 			(list x y))
-		(define click "click")
+		(define mouseup "mouseup")
+		(define mousedown "mousedown")
+		(define keyup "keyup")
+		(define keydown "keydown")
 		(define mouseover "mouseover")
 		(define mouseout "mouseout")
 	</script>
@@ -93,27 +99,34 @@
 	<!-- Sample code (do not tab)-->
 	<script id = "sample" type = "text/scheme">
 ;;add-body adds a body to the world
+;;Parameters : type, shape, position, angle, attributes, color, id, velocity
 ;;rect-shape width height
+;;circle-shape radius
+;;polygon-shape (vector2 x1 y1) (vector2 x2 y2) ...
 ;;attributes density friction restitution
 ;;vector2 x y
 ;;color red green blue
 ;;Every body needs an id with which you may refer to it
+;;An optional initial velocity may be specified
+
+;;Look at features file
 
 (define b-shape (rect-shape 50.0 40.0))
 (define b-attribs (attributes 1.0 0.5 0.3))
 (define b-position (vector2 50.0 400.0))
 (define b-color (color 0.3 0.4 0.65))
 (define b-angle 0.15)
-(define id "id3")
+(define id "id4")
+(define vel (vector2 -15.0 -10.0))
 
-(add-body dynamic b-shape b-position b-angle b-attribs b-color id)
+(add-body dynamic b-shape b-position b-angle b-attribs b-color id vel)
 
 (set! b-shape (circle-shape 30.0))
 (set! b-attribs (attributes 0.5 0.5 1.0))
 (set! b-position (vector2 400.0 200.0))
 (set! b-color (color 1.0 0.1 0.3))
 (set! b-angle 0.4)
-(set! id "id4")
+(set! id "id5")
 
 (add-body dynamic b-shape b-position b-angle b-attribs b-color id)
 
@@ -122,7 +135,7 @@
 (set! b-position (vector2 100.0 320.0))
 (set! b-color (color 0.67 1.0 0.18))
 (set! b-angle 0.2)
-(set! id "id5")
+(set! id "id6")
 
 (add-body dynamic b-shape b-position b-angle b-attribs b-color id)
 	</script>
