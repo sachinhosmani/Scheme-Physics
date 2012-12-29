@@ -88,12 +88,13 @@
 			(list r g b))
 		(define (vector2 x y)
 			(list x y))
+		
+		;;Events
 		(define mouseup "mouseup")
 		(define mousedown "mousedown")
+		(define mousemove "mousemove")
 		(define keyup "keyup")
 		(define keydown "keydown")
-		(define mouseover "mouseover")
-		(define mouseout "mouseout")
 	</script>
 	
 	<!-- Sample code (do not tab)-->
@@ -111,33 +112,34 @@
 
 ;;Look at features file
 
+;;generates an id
+(define (gen-id)
+  (string-concat (list "id" (+ body-count 1))))
+
 (define b-shape (rect-shape 50.0 40.0))
 (define b-attribs (attributes 1.0 0.5 0.3))
 (define b-position (vector2 50.0 400.0))
 (define b-color (color 0.3 0.4 0.65))
 (define b-angle 0.15)
-(define id "id4")
 (define vel (vector2 -15.0 -10.0))
 
-(add-body dynamic b-shape b-position b-angle b-attribs b-color id vel)
+(add-body dynamic b-shape b-position b-angle b-attribs b-color (gen-id) vel)
 
 (set! b-shape (circle-shape 30.0))
 (set! b-attribs (attributes 0.5 0.5 1.0))
 (set! b-position (vector2 400.0 200.0))
 (set! b-color (color 1.0 0.1 0.3))
 (set! b-angle 0.4)
-(set! id "id5")
 
-(add-body dynamic b-shape b-position b-angle b-attribs b-color id)
+(add-body dynamic b-shape b-position b-angle b-attribs b-color (gen-id))
 
 (set! b-shape (polygon-shape (vector2 30.0 40.0) (vector2 10.0 -30.0) (vector2 60.0 0.0) (vector2 80.0 60.0) (vector2 70.0 80.0)))
 (set! b-attribs (attributes 1.0 0.5 0.5))
 (set! b-position (vector2 100.0 320.0))
 (set! b-color (color 0.67 1.0 0.18))
 (set! b-angle 0.2)
-(set! id "id6")
 
-(add-body dynamic b-shape b-position b-angle b-attribs b-color id)
+(add-body dynamic b-shape b-position b-angle b-attribs b-color (gen-id))
 	</script>
 
 </body>

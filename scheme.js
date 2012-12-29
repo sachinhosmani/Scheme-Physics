@@ -1,6 +1,6 @@
 /*Global object*/
 var g_Scheme = {
-	interpreter : undefined ,
+	interpreter : undefined , //BiwaScheme object that interprets
 	input : undefined , //where code is written
 	output : undefined //where text outputs are displayed
 };
@@ -65,24 +65,30 @@ g_Helper.moveHandler = function() {
 			yBefore = yAfter;
 			yAfter = y;
 		} ,
-		getX : function() {
+		getXAfter : function() {
 			return xAfter;
 		} ,
-		getY : function() {
+		getYAfter : function() {
 			return yAfter;
+		} ,
+		getXBefore : function() {
+			return xBefore;
+		} ,
+		getYBefore : function() {
+			return yBefore;
 		}
 	};
 }();
-g_Scheme.updateClickVars = function() {
+g_Scheme.updateMouseVars = function() {
 	//Update Scheme click variables
 	BiwaScheme.CoreEnv["x-down"] = g_Helper.clickHandler.getXDown();
 	BiwaScheme.CoreEnv["y-down"] = g_Helper.clickHandler.getYDown();
+	BiwaScheme.CoreEnv["x-before"] = g_Helper.moveHandler.getXBefore();
+	BiwaScheme.CoreEnv["y-before"] = g_Helper.moveHandler.getYBefore();
+	BiwaScheme.CoreEnv["x-after"] = g_Helper.moveHandler.getXAfter();
+	BiwaScheme.CoreEnv["y-after"] = g_Helper.moveHandler.getYAfter();
 	BiwaScheme.CoreEnv["x-up"] = g_Helper.clickHandler.getXUp();
 	BiwaScheme.CoreEnv["y-up"] = g_Helper.clickHandler.getYUp();
-	var bodyUp = g_Box2D.findBodyAt(g_Box2D.vector2D(g_Helper.clickHandler.getXUp(), g_Helper.clickHandler.getYUp()));
-	var bodyDown = g_Box2D.findBodyAt(g_Box2D.vector2D(g_Helper.clickHandler.getXDown(), g_Helper.clickHandler.getYDown()));
-	BiwaScheme.CoreEnv["id-mouse-up"] = (bodyUp && bodyUp.id());
-	BiwaScheme.CoreEnv["id-mouse-down"] = (bodyDown && bodyDown.id());
 };
 g_Scheme.updateKeyVars = function() {
 	//Update Scheme keyboard variables
@@ -104,7 +110,7 @@ $(document).ready(
 			g_Scheme.output[0].scrollTop = g_Scheme.output[0].scrollHeight;
 		});
 		//Scheme environment variables
-		g_Scheme.updateClickVars();
+		g_Scheme.updateMouseVars();
 		g_Scheme.updateBodyVars();
 		g_Scheme.updateKeyVars();
 		BiwaScheme.CoreEnv["canvas-width"] = canvas_width;
@@ -188,10 +194,6 @@ g_Scheme.schemeEval = function() { //called everytime 'Evaluate' button is click
 
 /*Mappings*/
 //link up javascript functions to BiwaScheme
-BiwaScheme.define_libfunc("alert", 1, 1, function(args) {
-	alert(args[0]);
-	return BiwaScheme.undef;
-});
 BiwaScheme.define_libfunc("add-body", 7, 8, function(args) {
 	//adds a body to the world
 	//arguments : body type, shape, initial position, initial angle, attributes, color, id, (opt.)initial velocity
@@ -250,7 +252,7 @@ BiwaScheme.define_libfunc("remove-clicked", 0, 0, function() {
 	g_Scheme.updateBodyVars();
 	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("body-color", 2, 2, function(args) {
+BiwaScheme.define_libfunc("change-body-color", 2, 2, function(args) {
 	//changes a body's color
 	var color_arr = g_Scheme.listToArray(args[1]);
 	var id = args[0];
@@ -260,7 +262,7 @@ BiwaScheme.define_libfunc("body-color", 2, 2, function(args) {
 	}
 	return BiwaScheme.undef;
 });
-BiwaScheme.define_libfunc("bg-color", 1, 1, function(args) {
+BiwaScheme.define_libfunc("change-bg-color", 1, 1, function(args) {
 	//changes the bg-color of the canvas
 	var bg_color = g_Scheme.listToArray(args[0]);
 	if(g_Helper.liesIn(bg_color[0], 0, 1) && g_Helper.liesIn(bg_color[1], 0, 1) && g_Helper.liesIn(bg_color[2], 0, 1)) {
@@ -270,7 +272,8 @@ BiwaScheme.define_libfunc("bg-color", 1, 1, function(args) {
 });
 BiwaScheme.define_libfunc("on", 2, 2, function(args) {
 	//adds event handler function (on event "handling code")
-	if(args[0] !== "mouseup" && args[0] !== "mousedown" && args[0] !== "keydown" && args[0] !== "keyup") {
+	if(args[0] !== "mouseup" && args[0] !== "mousedown" && args[0] !== "mousemove" && args[0] !== "keydown" && args[0] !== "keyup") {
+		console.log("G");
 		return;
 	}
 	g_Scheme.handlerManager.addHandler(args[0], args[1]);
@@ -278,7 +281,7 @@ BiwaScheme.define_libfunc("on", 2, 2, function(args) {
 });
 BiwaScheme.define_libfunc("~on", 1, 2, function(args) {
 	//removes event handler
-	if(args[0] !== "mouseup" && args[0] !== "mousedown" && args[0] !== "keydown" && args[0] !== "keyup") {
+	if(args[0] !== "mouseup" && args[0] !== "mousedown" && args[0] !== "mousemove" && args[0] !== "keydown" && args[0] !== "keyup") {
 		return;
 	}
 	if(args.length === 2) {
@@ -364,6 +367,76 @@ BiwaScheme.define_libfunc("set-linear-velocity", 2, 2, function(args) {
 		return;
 	}
 	body.SetLinearVelocity(new b2Vec2(vel[0]/g_Box2D.scale, vel[1]/g_Box2D.scale));
+	return BiwaScheme.undef;
+});
+
+//Body information returning functions
+BiwaScheme.define_libfunc("body-com", 1, 1, function(args) {
+	var body = g_Box2D.bodyMap(args[0]);
+	if(body !== undefined) {
+		var com = body.GetWorldCenter();
+		return BiwaScheme.array_to_list([com.x*g_Box2D.scale, com.y*g_Box2D.scale]);
+	}
+	return BiwaScheme.undef;
+});
+BiwaScheme.define_libfunc("body-angle", 1, 1, function(args) {
+	var body = g_Box2D.bodies[g_Box2D.findBodyIndex(args[0])];
+	if(body !== undefined) {
+		return body.angle;
+	}
+	return BiwaScheme.undef;
+});
+BiwaScheme.define_libfunc("body-vertices", 1, 1, function(args) {
+	var body = g_Box2D.bodies[g_Box2D.findBodyIndex(args[0])];
+	if(body !== undefined) {
+		return BiwaScheme.array_to_list(body.shape.getVertices());
+	}
+	return BiwaScheme.undef;
+});
+BiwaScheme.define_libfunc("body-linear-velocity", 1, 1, function(args) {
+	var body = g_Box2D.bodyMap(args[0]);
+	if(body !== undefined) {
+		var vel = body.GetLinearVelocity();
+		return BiwaScheme.array_to_list([vel.x*g_Box2D.scale, vel.y*g_Box2D.scale]);
+	}
+	return BiwaScheme.undef;
+});
+BiwaScheme.define_libfunc("body-attributes", 1, 1, function(args) {
+	var body = g_Box2D.bodies[g_Box2D.findBodyIndex(args[0])];
+	if(body !== undefined) {
+		return BiwaScheme.array_to_list([body.attributes.density, body.attributes.friction, body.attributes.restitution]);
+	}
+	return BiwaScheme.undef;
+});
+BiwaScheme.define_libfunc("body-color", 1, 1, function(args) {
+	var body = g_Box2D.bodies[g_Box2D.findBodyIndex(args[0])];
+	if(body !== undefined) {
+		return BiwaScheme.array_to_list([body.color.red, body.color.green, body.color.blue]);
+	}
+	return BiwaScheme.undef;
+});
+
+
+BiwaScheme.define_libfunc("set-gravity", 1, 1, function(args) {
+	var gravity = g_Scheme.listToArray(args[0]);
+	if(gravity.length !== 2) {
+		return BiwaScheme.undef;
+	}
+	if(typeof gravity[0] !== "number" || typeof gravity[1] !== "number") {
+		return BiwaScheme.undef;
+	}
+	g_Box2D.world.SetGravity(new b2Vec2(gravity[0]/g_Box2D.scale, gravity[1]/g_Box2D.scale));
+	return BiwaScheme.undef;
+});
+BiwaScheme.define_libfunc("body-at", 1, 1, function(args) {
+	var coords = g_Scheme.listToArray(args[0]);
+	if(coords[0] === undefined || coords[1] === undefined) {
+		return;
+	}
+	var body = g_Box2D.findBodyAt(g_Box2D.vector2D(coords[0], coords[1]));
+	if(body !== undefined) {
+		return body.id();
+	}
 	return BiwaScheme.undef;
 });
 /* ~ Mappings*/
@@ -494,21 +567,22 @@ g_Scheme.handlerManager = (function() {
 	}
 })();
 g_Helper.fetchMouseDown = function(event) {
-//called everytime there is a click on the canvas
+//called everytime there is a mouse down on the canvas
 	g_Helper.clickHandler.setXDown(event.clientX - canvas.offsetLeft);
 	g_Helper.clickHandler.setYDown(canvas_height - (event.clientY - canvas.offsetTop));
-	g_Scheme.updateClickVars();
+	g_Scheme.updateMouseVars();
 };
 g_Helper.fetchMouseUp = function(event) {
-//called everytime there is a click on the canvas
+//called everytime there is a mouse up on the canvas
 	g_Helper.clickHandler.setXUp(event.clientX - canvas.offsetLeft);
 	g_Helper.clickHandler.setYUp(canvas_height - (event.clientY - canvas.offsetTop));
-	g_Scheme.updateClickVars();
+	g_Scheme.updateMouseVars();
 };
 g_Helper.fetchMoveCoords = function(event) {
-//called everytime there is a click on the canvas
+//called everytime there is mouse movement on the canvas
 	g_Helper.moveHandler.setX(event.clientX - canvas.offsetLeft);
 	g_Helper.moveHandler.setY(canvas_height - (event.clientY - canvas.offsetTop));
+	g_Scheme.updateMouseVars();
 };
 g_Helper.fetchKeyDown = function(event) {
 //called everytime there is a key down

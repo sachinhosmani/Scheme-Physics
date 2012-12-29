@@ -264,7 +264,7 @@ g_Box2D.attributes = function(density, friction, restitution) { //holds attribut
 	};
 };
 g_Box2D.createBody = function(p_type, p_shape, p_position, p_angle, p_velocity, p_attributes, p_color, p_id) { //body container
-	return {
+	var body = {
 		type : function() {
 			return p_type !== undefined ? p_type : b2Body.b2_dynamicBody;
 		} ,
@@ -288,7 +288,7 @@ g_Box2D.createBody = function(p_type, p_shape, p_position, p_angle, p_velocity, 
 				case "Circle" :
 					return pos.dist(this.position) <= this.shape.radius ? 1 : 0;
 					break;
-				case "Polygon" : case "Rectangle" :
+				case "Polygon" :
 					var vertices = this.shape.vertices.copy(); //clone the vertices property
 					for(var i = 0; i < vertices.length; i++) {
 						vertices[i] = vertices[i].rotate(this.angle);
@@ -369,6 +369,14 @@ g_Box2D.createBody = function(p_type, p_shape, p_position, p_angle, p_velocity, 
 			}
 		}
 	};
+	if(body.shape.type === "Circle") {
+	//Circles need to have an axis drawn on them, to show their angle
+	//so, create a triangle shape as a property of the body, so that it can also be rendered
+		body.axisShape = g_Box2D.polygonShape([g_Box2D.vector2D(0, 0), g_Box2D.vector2D(body.shape.radius * Math.cos(body.angle)
+		, body.shape.radius * Math.sin(body.angle)), g_Box2D.vector2D(body.shape.radius * Math.cos(body.angle + 0.1)
+		, body.shape.radius * Math.sin(body.angle + 0.1))]);
+	}
+	return body;
 }
 g_WebGL.buffer = function(position, angle) {
 	return {
@@ -390,7 +398,6 @@ g_Box2D.initWorld = function() { //initializes the world
 	);
 };
 g_Box2D.update = function() {
-
 	//apply forces on all bodies in force_bodies
 	var tmp = g_Box2D.force_bodies;
 	for(var i = 0; i < tmp.length; ) {
@@ -451,9 +458,9 @@ g_WebGL.setup = function(shape) {
 	var vertices = shape.getVertices();
 	g_WebGL.gl.bindBuffer(g_WebGL.gl.ARRAY_BUFFER, shape.buffer);
 	g_WebGL.gl.bufferData(
-		 g_WebGL.gl.ARRAY_BUFFER,
-		 new Float32Array(vertices),
-		 g_WebGL.gl.STATIC_DRAW);
+		g_WebGL.gl.ARRAY_BUFFER,
+		new Float32Array(vertices),
+		g_WebGL.gl.STATIC_DRAW);
 }
 //update the shader's variables with updated values
 g_WebGL.animate = function(body) {
@@ -484,6 +491,12 @@ g_WebGL.tick = function() {
 		g_WebGL.initBuffers(g_Box2D.bodies[i].shape.buffer);
 		g_WebGL.animate(g_Box2D.bodies[i]);
 		g_WebGL.drawScene(g_Box2D.bodies[i].shape.number_vertices());
+		if(g_Box2D.bodies[i].axisShape !== undefined) {
+		//If the body has an axisShape property (is a circle), draw the axis
+			g_WebGL.setColor(g_Box2D.color(0, 0, 0)); //set color to black (by default)
+			g_WebGL.initBuffers(g_Box2D.bodies[i].axisShape.buffer);
+			g_WebGL.drawScene(g_Box2D.bodies[i].axisShape.number_vertices());
+		}
 	}
 	var time_now = new Date().getTime();
 	var dt = time_now - g_WebGL.last_time;
@@ -586,7 +599,7 @@ function start() {
 	g_Box2D.initWorld();
 	g_WebGL.canvas.addEventListener("mousedown", g_Helper.fetchMouseDown, false);
 	g_WebGL.canvas.addEventListener("mouseup", g_Helper.fetchMouseUp, false);
-	g_WebGL.canvas.addEventListener("move", g_Helper.fetchMoveCoords, false);
+	g_WebGL.canvas.addEventListener("mousemove", g_Helper.fetchMoveCoords, false);
 	g_WebGL.canvas.addEventListener("keydown", g_Helper.fetchKeyDown, false);
 	g_WebGL.canvas.addEventListener("keyup", g_Helper.fetchKeyUp, false);
 	//add some bodies
