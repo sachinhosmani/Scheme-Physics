@@ -102,7 +102,9 @@ g_Scheme.updateBodyVars = function() {
 };
 $(document).ready(
 	function() {
-		g_Scheme.input = $("#input");
+		g_Scheme.editor = CodeMirror.fromTextArea(
+			document.getElementById("input"),
+				{ lineNumbers: true, smartIndent: true});
 		g_Scheme.output = $("#output");
 		g_Scheme.interpreter = new BiwaScheme.Interpreter(function(e, state) {
 			g_Scheme.output.css("color", "red");
@@ -128,7 +130,7 @@ $("#clear_btn").click(function() {
 	g_Scheme.output.val("");
 });
 g_Helper.loadCode = function(id) {
-	g_Scheme.input.val($("#" + id).text());
+	g_Scheme.editor.setValue($("#" + id).text());
 }
 g_Scheme.listToArray = function(list) {
 //converts scheme list to javascript array (vice-versa implemented in BiwaScheme)
@@ -169,13 +171,13 @@ g_Scheme.unbalancedParentheses = function(code) {
 	return parentheses != 0 || brakets != 0;
 }
 g_Scheme.schemeEval = function() { //called everytime 'Evaluate' button is clicked
-	if(g_Scheme.unbalancedParentheses(g_Scheme.input.val())) {
+	if(g_Scheme.unbalancedParentheses(g_Scheme.editor.getValue())) {
 		g_Scheme.output.css("color", "red");
 		g_Scheme.output.val(g_Scheme.output.val() + "Unbalanced Parentheses" + '\n');
 		g_Scheme.output[0].scrollTop = g_Scheme.output[0].scrollHeight;
 	}
 	else {
-		g_Scheme.interpreter.evaluate(g_Scheme.input.val(),
+		g_Scheme.interpreter.evaluate(g_Scheme.editor.getValue(),
 			function(result) {
 				if (result !== BiwaScheme.undef && result != undefined) {
 					result = BiwaScheme.to_write(result);
