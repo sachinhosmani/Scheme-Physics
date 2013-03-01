@@ -2,7 +2,7 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title>Scheme-Physics</title>
+	<title>scheme+physics &alpha;</title>
 	<link href="style.css" rel="stylesheet" type="text/css" />
 
 	<link href="dep/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
@@ -15,24 +15,29 @@
 
 <body>
 	<div class="first-half">
+		<h1> <em>scheme</em><sup class="plus">+</sup><i>physics</i><sup class="plus">&alpha;</sup></h1>
 		<div class="world">
-			<canvas id="canvas" width="600" height=500 tabindex="1"></canvas>
+			<canvas id="canvas" width="600" height=450 tabindex="1"></canvas>
 		</div>
-		<div class="out">
-			<textarea id="output" disabled="disabled" spellcheck="false"></textarea>
-			<input type="button" id="clear_btn" class="btn" value="Clear"></input>
-		</div>
+
+		<textarea id="output" disabled="disabled" spellcheck="false" title="Console output"></textarea>
+		<input type="button" id="clear_btn" class="btn" value="Clear"></input>
 	</div>
 
 	<div class="second-half">
 	<div class="in">
 		<textarea id="input" spellcheck="false"></textarea>
-		<div class="controls" style="margin-top: 10px">
-		<input type="button" id="eval_btn" class="button btn btn-success" style="font-weight: bold" value="Evaluate"></input>
-		<input type="button" id="sample_btn" class="button btn" style="float: right" value="Sample Code &rarr;"></input>
+		<div class="controls">
+			<input type="button" id="eval_btn" class="button btn btn-success" style="font-weight: bold" value="Evaluate"></input>
+			<a href="" class="btn btn-error">Reset</a>
+			<div style="float: right">
+				<a href="documentation.html" class="btn btn-warning">Documentation</a>
+				<input type="button" id="sample_btn" class="button btn" value="Load Sample Code &rarr;"></input>
+			</div>
 		</div>
 	</div>
-    	</div>
+    </div>
+
 	<script type="text/javascript" src="dep/webgl-utils.js"></script>
 	<script type="text/javascript" src="dep/Box2dWeb-2.1.a.3.js"></script>
 	<script type="text/javascript" src="dep/biwascheme.js" ></script>
@@ -107,59 +112,74 @@
 	
 	<!-- Sample code (do not tab)-->
 	<script id="sample" type="text/scheme">
-;; add-body adds a body to the world
-;; Arguments: type, shape, position, angle, attributes, color, id, velocity
-;; rect-shape width height
-;; circle-shape radius
-;; polygon-shape (vector2 x1 y1) (vector2 x2 y2) ...
-;; attributes density friction restitution
-;; vector2 x y
-;; color red green blue
-;; Every body needs an id with which you may refer to it
-;; An optional initial velocity may be specified
-
-;; Look at features file
-
-;; generates an id
-
 (define (gen-id)
   (string-concat (list "id" (+ body-count 1))))
 
-(define b-shape (rect-shape 50.0 40.0))
-(define b-attribs (attributes 1.0 0.5 0.3))
-(define b-position (vector2 50.0 400.0))
-(define b-color (color 0.3 0.4 0.65))
-(define b-angle 0.15)
-(define vel (vector2 -15.0 -10.0))
+;; let lets you assign names for values and use them to call procedures
+;; (let ((name1 value1) (name2 value2)...) <code with use of these names>)
 
-(add-body dynamic b-shape b-position b-angle b-attribs b-color (gen-id) vel)
+(let
+  ((shape (rect-shape 50.0 40.0))      ;; (rect-shape width height)
+   (attribs (attributes 1.0 0.5 0.3))  ;; (attributes density friction-coefficient restitution)
+   (position (vector2 50.0 400.0))     ;; (vector2 x y) -> returns a 2D vector
+   (color (color 0.3 0.4 0.65))        ;; (color red blue green)
+   (x-angle 0.15)                      ;; angle with respect to x axis(?)
+   (velocity (vector2 -15.0 -10.0)))
 
-(set! b-shape (circle-shape 30.0))
-(set! b-attribs (attributes 0.5 0.5 1.0))
-(set! b-position (vector2 400.0 200.0))
-(set! b-color (color 1.0 0.1 0.3))
-(set! b-angle 0.4)
+  ;; add-body adds a body to the world
+  ;; Arguments: type, shape, position, angle, attributes, color, id, velocity
+  ;; Every body needs an id with which you may refer to it
+  ;; here (gen-id) function generates unique ids.
+  ;; An optional initial velocity may be specified
+  ;;
+  ;; add the rectangle above described to the system!
 
-(add-body dynamic b-shape b-position b-angle b-attribs b-color (gen-id))
+  (add-body dynamic shape position x-angle attribs color (gen-id) velocity))
 
-(set! b-shape (polygon-shape (vector2 30.0 40.0) (vector2 10.0 -30.0) (vector2 60.0 0.0) (vector2 80.0 60.0) (vector2 70.0 80.0)))
-(set! b-attribs (attributes 1.0 0.5 0.5))
-(set! b-position (vector2 100.0 320.0))
-(set! b-color (color 0.67 1.0 0.18))
-(set! b-angle 0.2)
+(let
+  ((shape (circle-shape 30.0));; circle-shape radius
+   (attribs (attributes 0.5 0.5 1.0))  ;; restitution is 1 => perfectly elastic
+   (position (vector2 400.0 200.0))
+   (color (color 1.0 0.1 0.3))
+   (x-angle 0.4))
+  ;; add the circle to the system
+  (add-body dynamic shape position x-angle attribs color (gen-id)))
 
-(add-body dynamic b-shape b-position b-angle b-attribs b-color (gen-id))
-	</script>
+(let
+  ((shape
+      (polygon-shape (vector2 30.0 40.0)
+                     (vector2 10.0 -30.0)
+                     (vector2 60.0 0.0)
+                     (vector2 80.0 60.0)
+                     (vector2 70.0 80.0))) ;; (polygon <list of points as (vector2 xi yi)>)
+
+   (attribs (attributes 1.0 0.5 0.5))
+   (position (vector2 100.0 320.0))
+   (color (color 0.67 1.0 0.18))
+   (x-angle 0.2))
+  ;; add the polygon to the scene
+  (add-body dynamic shape position x-angle attribs color (gen-id)))
+</script>
 
     <script>
+
 	$(document).ready(function() {
 		g_Scheme.editor.setOption("theme", "solarized light");
-		var w = $(".first-half").eq(0).width() - 10;
-
-		$("#canvas").width(w);
-		$("#output").width(w-10);
-
 		g_Helper.loadCode("sample");
+
+		g_Helper.adjustScreen = function () {
+			var w = $(".first-half").eq(0).width() - 10;
+
+			$("#canvas").width(w);
+			$("#canvas").height('auto');
+			$("#output").width(w-10);
+			$("#output").css('top', $("#canvas").offset().top + $("#canvas").height() + 10);
+
+			$(".CodeMirror").height($(".first-half").height() - 50);
+		};
+
+		$(window).resize(g_Helper.adjustScreen);
+		g_Helper.adjustScreen();
 	});
     </script>
 

@@ -1,8 +1,11 @@
-#canvas {
+html, body {
+	height: 99.4%;
 }
 .first-half,.second-half {
-	width: 48.9% !important;
+	width: 49.2% !important;
 	float: left;
+	position: relative;
+	height: 100%;
 }
 .first-half {
 	margin-left: 0.5%;
@@ -15,8 +18,10 @@
 #output {
 	background: white !important;
 }
+
 .CodeMirror {
-	height: 600px !important;
+	position: absolute;
+	top: 0;
 }
 
 .second-half {
@@ -46,8 +51,36 @@
 
 #output {
 	width : 100%;
-	height : 100px;
+	position: absolute;
+	border:none;
+	height: 180px;
+	bottom: 0;
 	font-size : 16px;
 	font-family: 'Monaco','Menlo','Ubuntu Mono','Droid Sans Mono','Consolas',monospace;
 	resize : none;
+}
+h1 em, i {
+	font-family: georgia, garamond sans-serif;
+	font-style: normal;
+	font-weight: normal;
+}
+h1 em {
+	color: #1ab;
+}
+
+.plus {
+	color: #ccc;
+	font-weight: normal;
+}
+
+h1 i {
+	color: #b1a;
+}
+
+.controls {
+	position: absolute;
+	bottom: 1em;
+	right: 1em;
+	left: 1em;
+	z-index: 9;
 }
