@@ -121,6 +121,7 @@
 ;; Look at features file
 
 ;; generates an id
+
 (define (gen-id)
   (string-concat (list "id" (+ body-count 1))))
 
@@ -154,8 +155,11 @@
 	$(document).ready(function() {
 		g_Scheme.editor.setOption("theme", "solarized light");
 		var w = $(".first-half").eq(0).width() - 10;
+
 		$("#canvas").width(w);
 		$("#output").width(w-10);
+
+		g_Helper.loadCode("sample");
 	});
     </script>
 

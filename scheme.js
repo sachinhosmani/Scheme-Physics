@@ -104,7 +104,8 @@ $(document).ready(
 	function() {
 		g_Scheme.editor = CodeMirror.fromTextArea(
 			document.getElementById("input"),
-				{ lineNumbers: true, smartIndent: true});
+				{ lineNumbers: true, smartIndent: true,
+				  lineWrapping: true});
 		g_Scheme.output = $("#output");
 		g_Scheme.interpreter = new BiwaScheme.Interpreter(function(e, state) {
 			g_Scheme.output.css("color", "red");

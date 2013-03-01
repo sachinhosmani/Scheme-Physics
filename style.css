@@ -1,16 +1,28 @@
 #canvas {
 }
 .first-half,.second-half {
-	width: 50% !important;
+	width: 48.9% !important;
 	float: left;
+}
+.first-half {
+	margin-left: 0.5%;
 }
 #input {
 	font-size: 14px;
 	font-family: 'Monaco','Menlo','Ubuntu Mono','Droid Sans Mono','Consolas',monospace;
 	resize : none;
 }
+#output {
+	background: white !important;
+}
 .CodeMirror {
 	height: 600px !important;
+}
+
+.second-half {
+	background: #eee8d5;
+	padding-bottom: 10px;
+	border-left: 1px solid black;
 }
 
 .out {
@@ -19,9 +31,17 @@
 
 #clear_btn {
 	position: absolute;
-	bottom: 0;
-	right: 0;
+	bottom: 1em;
+	opacity: 0;
+	right: 1em;
 	margin: 0;
+}
+#clear_btn:hover {
+	opacity: 1;
+}
+
+#eval_btn {
+	margin-left: 1em;
 }
 
 #output {
