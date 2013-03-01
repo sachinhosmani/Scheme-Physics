@@ -1,16 +1,31 @@
 This is a rough file with all the features implemented so far and comments on them and in no way an end-product
 documentation. This document is intended for the developers.
 
-Implemented Functions :
+This will eventually be replaced by clean documentation (for kids! :D)
+
+Ideas:
+
+Start off building a 2D physics simulator using Box2D.
+Continuously keep porting parts of Box2D to scheme code, (performance problems here! :/)
+We can fallback to box2D wherever performance becomes an issue.
+Should the examples start off at a high level? I think yes, that would be interesting,
+then if the user is interested, he could look at the lover levels of abstractions. That's how everyone learns to code.
+This method gives better feedback to the user in the beginning stages.
+
+Implemented Functions:
 
 1. add-body (adds a body to the world)
 2. remove-body (removes a body of given id from the world)
 3. alert (invokes alert)
 
+XXX should we use 'mouseup 'mousedown etc instead of mouseup mousedown? I think YES!
 4. on (adds an event handler)
 		when the 1st argument happens, code enclosed in 2nd argument is evaluated 
 		(adds the event handler to the event)
 		Supported handlers :
+
+		XXX: Thie second argument should be lambdas! Fix this asap.
+
 			-> mouseup : e.g : (on mouseup "(remove (body-at (vector2 x-up y-up)))")
 			-> mousedown : e.g : (on mousedown "(remove (body-at (vector2 x-down y-down)))")
 			-> mousemove :
