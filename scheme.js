@@ -5,6 +5,10 @@ var g_Scheme = {
 	output : undefined //where text outputs are displayed
 };
 
+if(!this.g_Helper) {
+	this.g_Helper = {};
+}
+
 //mouse click manager
 g_Helper.clickHandler = function() {
 	var xUp, yUp, xDown, yDown; //private

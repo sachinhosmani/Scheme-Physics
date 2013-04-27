@@ -18,7 +18,9 @@ var g_WebGL = {
 	rotation : [] ,
 	angle : 0
 };
-var g_Helper = {};
+if(!this.g_Helper) {
+	this.g_Helper = {};
+}
 /* ~ Global Objects*/
 g_WebGL.shader = {
 	positionLocation : undefined ,
