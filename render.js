@@ -85,6 +85,11 @@ g_Box2D.removeBody = function (id) {
 };
 // apply impulse on body, at point
 g_Box2D.applyImpulse = function (id, impulse, point) {
+    console.log("here");
+    console.log(id);
+    console.log(impulse);
+    console.log(point);
+    console.log("done");
 	// find the mapped box2D body of that id
     var i_body = g_Box2D.bodyMap(id);
     if (i_body === undefined) {
@@ -291,11 +296,11 @@ g_Box2D.createBody = function (p_type, p_shape, p_position, p_angle, p_velocity,
 			total_time : [] ,
 			time_left : []
 		} ,*/
-        //tells if 'pos' lies inside the shape
+        // tells if 'pos' lies inside the shape
         contains: function (pos) {
             switch (this.shape.type) {
             case "Circle":
-                return pos.dist(this.position) <= this.shape.radius ? 1 : 0;
+                return pos.dist(this.position) <= this.shape.radius ? true : false;
                 break;
             case "Polygon":
                 var vertices = this.shape.vertices.copy(); //clone the vertices property
@@ -328,13 +333,13 @@ g_Box2D.createBody = function (p_type, p_shape, p_position, p_angle, p_velocity,
                             (lp2.y - lp1.y) * lp1.x +
                             (lp2.x - lp1.x) * lp1.y;
                     };
-                    if (!(p1 && p2 && lp1 && lp2)) return 0;
+                    if (!(p1 && p2 && lp1 && lp2)) return false;
                     return eq(lp1, lp2, p1) * eq(lp1, lp2, p2) > 0;
                 }
                 // if they are on the same side, it is an interior point
                 for (var i = 0; i < vertices.length; i++) {
                     if (!sameSide(pole, pos, vertices[i], vertices[(i + 1) % vertices.length])) {
-                        return 0;
+                        return false;
                     }
                 }
                 return 1;
@@ -606,11 +611,6 @@ function start() {
     g_WebGL.initGL();
     g_WebGL.initShaders();
     g_Box2D.initWorld();
-    g_WebGL.canvas.addEventListener("mousedown", g_Helper.fetchMouseDown, false);
-    g_WebGL.canvas.addEventListener("mouseup", g_Helper.fetchMouseUp, false);
-    g_WebGL.canvas.addEventListener("mousemove", g_Helper.fetchMoveCoords, false);
-    g_WebGL.canvas.addEventListener("keydown", g_Helper.fetchKeyDown, false);
-    g_WebGL.canvas.addEventListener("keyup", g_Helper.fetchKeyUp, false);
     // add some bodies
     (g_Box2D.createBody(b2Body.b2_dynamicBody, g_Box2D.rectangleShape(25.0, 46.0), g_Box2D.vector2D(135.0, 150.0), 0.54, g_Box2D.vector2D(10.0, 0.0), g_Box2D.attributes(1.0, 0.5, 0.2), g_Box2D.color(1.0, 0.5, 0.0), "id2")).add();
     (g_Box2D.createBody(b2Body.b2_staticBody, g_Box2D.rectangleShape(1000.0, 25.0), g_Box2D.vector2D(350.0, 10.0), 0, g_Box2D.vector2D(0.0, 0.0), g_Box2D.attributes(1.0, 0.5, 0.2), g_Box2D.color(0.2, 0.5, 1.0), "id1")).add();

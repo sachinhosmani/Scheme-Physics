@@ -2,103 +2,15 @@
 var g_Scheme = {
     interpreter: undefined, // BiwaScheme object that interprets
     input: undefined, // where code is written
-    output: undefined // where text outputs are displayed
+    output: undefined, // where text outputs are displayed
+    events: new Set(["mouseup", "mousedown", "mousemove", "mouseover", "mouseout",
+            "keyup", "keydown"])
 };
 
 if (!this.g_Helper) {
     this.g_Helper = {};
 }
 
-/*mouse click manager*/
-g_Helper.clickHandler = function () {
-    var xUp, yUp, xDown, yDown;
-    return {
-        setXUp: function (x) {
-            xUp = x;
-        },
-        setYUp: function (y) {
-            yUp = y;
-        },
-        getXUp: function () {
-            return xUp;
-        },
-        getYUp: function () {
-            return yUp;
-        },
-        setXDown: function (x) {
-            xDown = x;
-        },
-        setYDown: function (y) {
-            yDown = y;
-        },
-        getXDown: function () {
-            return xDown;
-        },
-        getYDown: function () {
-            return yDown;
-        }
-    };
-}();
-/*keyboard events manager*/
-g_Helper.keyHandler = function () {
-    var keyUp, keyDown;
-    return {
-        setUp: function (key) {
-            keyUp = key;
-        },
-        setDown: function (key) {
-            keyDown = key;
-        },
-        getUp: function () {
-            return keyUp;
-        },
-        getDown: function () {
-            return keyDown;
-        }
-    };
-}();
-/*mouse move manager*/
-g_Helper.moveHandler = function () {
-    var xBefore, yBefore, xAfter, yAfter;
-    return {
-        setX: function (x) {
-            xBefore = xAfter;
-            xAfter = x;
-        },
-        setY: function (y) {
-            yBefore = yAfter;
-            yAfter = y;
-        },
-        getXAfter: function () {
-            return xAfter;
-        },
-        getYAfter: function () {
-            return yAfter;
-        },
-        getXBefore: function () {
-            return xBefore;
-        },
-        getYBefore: function () {
-            return yBefore;
-        }
-    };
-}();
-g_Scheme.updateMouseVars = function () {
-    // Update Scheme click variables
-    BiwaScheme.CoreEnv["x-down"] = g_Helper.clickHandler.getXDown();
-    BiwaScheme.CoreEnv["y-down"] = g_Helper.clickHandler.getYDown();
-    BiwaScheme.CoreEnv["x-before"] = g_Helper.moveHandler.getXBefore();
-    BiwaScheme.CoreEnv["y-before"] = g_Helper.moveHandler.getYBefore();
-    BiwaScheme.CoreEnv["x-after"] = g_Helper.moveHandler.getXAfter();
-    BiwaScheme.CoreEnv["y-after"] = g_Helper.moveHandler.getYAfter();
-    BiwaScheme.CoreEnv["x-up"] = g_Helper.clickHandler.getXUp();
-    BiwaScheme.CoreEnv["y-up"] = g_Helper.clickHandler.getYUp();
-};
-g_Scheme.updateKeyVars = function () {
-    // Update Scheme keyboard variables
-    BiwaScheme.CoreEnv["key-up"] = g_Helper.keyHandler.getUp();
-    BiwaScheme.CoreEnv["key-down"] = g_Helper.keyHandler.getDown();
-};
 g_Scheme.updateBodyVars = function () {
     // Update body click variables
     BiwaScheme.CoreEnv["body-list"] = BiwaScheme.array_to_list(g_Box2D.getBodyList());
@@ -119,9 +31,7 @@ $(document).ready(
             g_Scheme.output[0].scrollTop = g_Scheme.output[0].scrollHeight;
         });
         // Scheme environment variables
-        g_Scheme.updateMouseVars();
         g_Scheme.updateBodyVars();
-        g_Scheme.updateKeyVars();
         BiwaScheme.CoreEnv["canvas-width"] = canvas_width;
         BiwaScheme.CoreEnv["canvas-height"] = canvas_height;
 
@@ -286,23 +196,22 @@ BiwaScheme.define_libfunc("change-bg-color", 1, 1, function (args) {
     return BiwaScheme.undef;
 });
 BiwaScheme.define_libfunc("on", 2, 2, function (args) {
-    // adds event handler function (on event "handling code")
-    if (args[0] !== "mouseup" && args[0] !== "mousedown" && args[0] !== "mousemove" && args[0] !== "keydown" && args[0] !== "keyup") {
-        console.log("G");
-        return;
+    // adds event handler function (on event lambda)
+    if (!args[0].name || !g_Scheme.events.has(args[0].name)) {
+        throw "Illegal event : " + args[0] + " in 'on'";
     }
-    g_Scheme.handlerManager.addHandler(args[0], args[1]);
+    g_Scheme.handlerManager.addHandler(args[0].name, args[1]);
     return BiwaScheme.undef;
 });
 BiwaScheme.define_libfunc("~on", 1, 2, function (args) {
     // removes event handler
-    if (args[0] !== "mouseup" && args[0] !== "mousedown" && args[0] !== "mousemove" && args[0] !== "keydown" && args[0] !== "keyup") {
-        return;
+    if (!args[0].name || !g_Scheme.events.has(args[0].name)) {
+        throw "Illegal event name: " + args[0] + " in '~on'";
     }
     if (args.length === 2) {
-        g_Scheme.handlerManager.removeHandler(args[0], args[1]);
+        g_Scheme.handlerManager.removeHandler(args[0].name, args[1]);
     } else {
-        g_Scheme.handlerManager.removeHandler(args[0]);
+        g_Scheme.handlerManager.removeHandler(args[0].name);
     }
     return BiwaScheme.undef;
 });
@@ -321,15 +230,9 @@ BiwaScheme.define_libfunc("handler-data", 0, 1, function (args) {
         return BiwaScheme.array_to_list(g_Scheme.handlerManager.allHandlerData(args[0]));
     }
 });
-BiwaScheme.define_libfunc("alert-click-coords", 0, 0, function () {
-    // alerts last clicked coordinates
-    alert(g_Helper.clickHandler.getXUp() + " " + g_Helper.clickHandler.getYUp());
+BiwaScheme.define_libfunc("console-log", 1, 1, function (args) {
+    console.log(args[0]);
     return BiwaScheme.undef;
-});
-BiwaScheme.define_libfunc("click-coords", 0, 0, function () {
-    // Scheme list of last clicked coordinates
-    var coords = [typeof g_Helper.clickHandler.getXUp() === "number" ? g_Helper.clickHandler.getXUp() : "undefined", typeof g_Helper.clickHandler.getYUp() === "number" ? g_Helper.clickHandler.getYUp() : "undefined"];
-    return BiwaScheme.array_to_list(coords);
 });
 BiwaScheme.define_libfunc("random", 0, 2, function (args) {
     // return a random number between the arguments specified (0, 1 assumed if not specified)
@@ -339,7 +242,10 @@ BiwaScheme.define_libfunc("random", 0, 2, function (args) {
         return Math.random();
 });
 BiwaScheme.define_libfunc("apply-impulse", 2, 3, function (args) {
+    console.log("on " + args[0]);
     // body's id, impulse vector, (opt.)point of application of impulse
+    if (args[0] === BiwaScheme.undef)
+        return;
     var impulse = g_Scheme.listToArray(args[1]);
     if (impulse.length !== 2) {
         return BiwaScheme.undef;
@@ -478,19 +384,20 @@ g_Scheme.handlerManager = (function () {
         //stores everything in 'details' and has retrieval methods
         var details = {};
         return {
-            recordHandler: function (event, call_back, scheme_code) {
+            recordHandler: function (event, call_back, proc) {
                 if (details[event] === undefined) {
                     details[event] = {};
                 }
-                if (details[event][scheme_code] === undefined) {
-                    details[event][scheme_code] = call_back;
+                var hashKey = JSON.stringify(proc);
+                if (details[event][hashKey] === undefined) {
+                    details[event][hashKey] = call_back;
                     return true;
                 }
                 return false;
             },
-            eraseHandler: function (event, scheme_code) {
-                if (scheme_code !== undefined) {
-                    delete details[event][scheme_code];
+            eraseHandler: function (event, proc) {
+                if (proc !== undefined) {
+                    delete details[event][JSON.stringify(proc)];
                     var ctr = 0;
                     for (var i in details[event]) {
                         if (details[event].hasOwnProperty(i)) {
@@ -504,8 +411,10 @@ g_Scheme.handlerManager = (function () {
                     delete details[event];
                 }
             },
-            retrieveCallBack: function (event, scheme_code) {
-                return details[event][scheme_code];
+            retrieveCallBack: function (event, proc) {
+                if (!(event in details))
+                    return null;
+                return details[event][JSON.stringify(proc)];
             },
             listCallBacks: function (event) {
             	// list all callbacks for an event
@@ -544,21 +453,40 @@ g_Scheme.handlerManager = (function () {
     })();
 	// The returned object just exposes what is needed.
     return {
-        addHandler: function (event, scheme_code) {
-            var evalSchemeCode = function () {
-                g_Scheme.interpreter.evaluate(scheme_code);
+        addHandler: function (event, proc) {
+            var evalProc = function () {
+            	var eventObj = arguments[0];
+            	switch (event) {
+            		case "mouseup":
+            		case "mousedown":
+            		case "mousemove":
+                    case "mouseover":
+                    case "mouseout":
+            			var x = eventObj.clientX - g_WebGL.canvas.offsetLeft;
+            			var y = canvas_height - (eventObj.clientY - g_WebGL.canvas.offsetTop);
+		                g_Scheme.interpreter.invoke_closure.call(g_Scheme.interpreter,
+		                	proc, [x, y]);
+            			break;
+            		case "keyup":
+            		case "keydown":
+		                g_Scheme.interpreter.invoke_closure.call(g_Scheme.interpreter,
+		                	proc, [eventObj.keyCode]);
+            			break;
+            	}
             };
-            if (handlerStore.recordHandler(event, evalSchemeCode, scheme_code)) {
-                //only if handler wasn't added before
-                g_WebGL.canvas.addEventListener(event, evalSchemeCode, false);
+            if (handlerStore.recordHandler(event, evalProc, proc)) {
+                // only if handler wasn't added before
+                g_WebGL.canvas.addEventListener(event, evalProc, false);
             }
         },
-        removeHandler: function (event, scheme_code) {
-            if (scheme_code) {
-                //retrieve the call_back reference from the handlerStore
-                var call_back = handlerStore.retrieveCallBack(event, scheme_code);
-                handlerStore.eraseHandler(event, scheme_code);
-                g_WebGL.canvas.removeEventListener(event, call_back, false);
+        removeHandler: function (event, proc) {
+            if (proc) {
+                // retrieve the call_back reference from the handlerStore
+                var call_back = handlerStore.retrieveCallBack(event, proc);
+                if (call_back) {
+	                handlerStore.eraseHandler(event, proc);
+	                g_WebGL.canvas.removeEventListener(event, call_back, false);
+	            }
             } else {
                 var call_backs = handlerStore.listCallBacks(event);
                 handlerStore.eraseHandler(event);
@@ -572,31 +500,3 @@ g_Scheme.handlerManager = (function () {
         }
     }
 })();
-g_Helper.fetchMouseDown = function (event) {
-    // called everytime there is a mouse down on the canvas
-    g_Helper.clickHandler.setXDown(event.clientX - canvas.offsetLeft);
-    g_Helper.clickHandler.setYDown(canvas_height - (event.clientY - canvas.offsetTop));
-    g_Scheme.updateMouseVars();
-};
-g_Helper.fetchMouseUp = function (event) {
-    // called everytime there is a mouse up on the canvas
-    g_Helper.clickHandler.setXUp(event.clientX - canvas.offsetLeft);
-    g_Helper.clickHandler.setYUp(canvas_height - (event.clientY - canvas.offsetTop));
-    g_Scheme.updateMouseVars();
-};
-g_Helper.fetchMoveCoords = function (event) {
-    // called everytime there is mouse movement on the canvas
-    g_Helper.moveHandler.setX(event.clientX - canvas.offsetLeft);
-    g_Helper.moveHandler.setY(canvas_height - (event.clientY - canvas.offsetTop));
-    g_Scheme.updateMouseVars();
-};
-g_Helper.fetchKeyDown = function (event) {
-    // called everytime there is a key down
-    g_Helper.keyHandler.setDown(event.keyCode);
-    g_Scheme.updateKeyVars();
-};
-g_Helper.fetchKeyUp = function (event) {
-    // called everytime there is a key up
-    g_Helper.keyHandler.setUp(event.keyCode);
-    g_Scheme.updateKeyVars();
-};

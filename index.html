@@ -40,7 +40,9 @@
 
 	<script type="text/javascript" src="dep/webgl-utils.js"></script>
 	<script type="text/javascript" src="dep/Box2dWeb-2.1.a.3.js"></script>
-	<script type="text/javascript" src="dep/biwascheme.js" ></script>
+	<script type="text/javascript" src="https://raw2.github.com/biwascheme/biwascheme/master/release/biwascheme-0.6.1-min.js"></script>
+	<!--
+	<script type="text/javascript" src="dep/biwascheme.js" ></script>-->
 	<script type="text/javascript" src="dep/jquery.js"></script>
 	<script type="text/javascript">
 		var canvas_width=500;
@@ -101,15 +103,8 @@
 			(list r g b))
 		(define (vector2 x y)
 			(list x y))
-		
-		;;Events
-		(define mouseup "mouseup")
-		(define mousedown "mousedown")
-		(define mousemove "mousemove")
-		(define keyup "keyup")
-		(define keydown "keydown")
 	</script>
-	
+
 	<!-- Sample code (do not tab)-->
 	<script id="sample" type="text/scheme">
 (define (gen-id)

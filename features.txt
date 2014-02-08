@@ -18,42 +18,46 @@ Implemented Functions:
 2. remove-body (removes a body of given id from the world)
 3. alert (invokes alert)
 
-XXX should we use 'mouseup 'mousedown etc instead of mouseup mousedown? I think YES!
 4. on (adds an event handler)
-		when the 1st argument happens, code enclosed in 2nd argument is evaluated 
+		when the 1st argument happens, procedure passed as second argument is executed
 		(adds the event handler to the event)
 		Supported handlers :
-
-		XXX: Thie second argument should be lambdas! Fix this asap.
-
-			-> mouseup : e.g : (on mouseup "(remove (body-at (vector2 x-up y-up)))")
-			-> mousedown : e.g : (on mousedown "(remove (body-at (vector2 x-down y-down)))")
-			-> mousemove :
-				e.g : (on mousemove 
-						"(apply-impulse (body-at (vector2 x-before y-before) 
-						(vector2 (- x-after x-before) (- y-after y-after)))")
-						
+			-> 'mouseup:
+				e.g : (on 'mouseup (lambda (x y)
+						(remove (body-at (vector2 x y)))))
+			-> 'mousedown
+			-> 'mousemove :
+				e.g : (on 'mousemove (lambda (x y)
+						(apply-impulse (body-at (vector2 x-before y-before)
+						(vector2 (- x-after x-before) (- y-after y-after)))")))
 						;;applies an impulse proportional to extent of mouse movement
-						
-			-> keydown : e.g : (on keydown "(if (= key-down 65) (apply-impulse "id3" (vector2 50.0 50.0)))")
-			-> keyup : e.g : (on keyup "(if (= key-up 65) (apply-impulse "id3" (vector2 50.0 50.0)))")
-			
-			-> drag (not primitive, but can be implemented)
-				e.g : 
-					(define drag? #f)
-					;;drag? tells if there is currently a dragging happening
-					(on mousedown "(set! drag? #t)")
-					(on mouseup "(set! drag? #f)")
-					;;Define a function that pulls along, bodies that are dragged
-					(define (func)
-						(if drag?
-							;;handle here
-					))
-					;;add the handler
-					(on mousemove "(func)")
-					
-								
+			-> 'mouseover
+			-> 'mouseout
+			-> 'keydown :
+				e.g : (on 'keydown (lambda (code)
+						(if (= key-down 65) (apply-impulse "id3" (vector2 50.0 50.0)))))
+			-> 'keyup
+		Complex example:
+			drag (not primitive, but can be implemented)
+				e.g :
+					(define (add-drag-handler handler)
+						(define (start-drag)
+							(on 'mousemove handler))
+						(define (stop-drag)
+							(~on 'mousemove handler))
+						(on 'mousedown start-drag)
+						(on 'mouseup stop-drag)
+						(on 'mouseout stop-drag))
+
 5. ~on (removes event handler(s) , undoes 'on')
+	Can be used in two ways:
+		1. Remove all handlers of an event
+			(~on 'mouseup)
+		2. Remove one specific handler of an event
+			(on 'mouseup foo)
+			(~on 'mouseup foo)
+		For this to work you must have a reference to the callback procedure.
+		This means you can't use lambdas as handlers if you want to later remove them.
 
 6. handler-data (returns a list of all handlers of event(s))
 
@@ -66,7 +70,7 @@ XXX should we use 'mouseup 'mousedown etc instead of mouseup mousedown? I think 
 11. apply-force (apply force for a required period of time on a body)
 	e.g : (apply-force "id3" (vector2 1000.0 150.0) 5000) -> applies force for 5000 ms
 
-(Body information returning function : )
+(Body information returning functions : )
 
 12. body-com (center of mass position of a body)
 13. body-angle (angle of a body)
@@ -78,42 +82,38 @@ XXX should we use 'mouseup 'mousedown etc instead of mouseup mousedown? I think 
 18. set-gravity (set the gravity of a world)
 19. body-at (id of the body at the specified coordinates)
 
-Implemented Variables :
+Global Variables :
 
-1. x-up & y-up (coordinates of the last mouse up on canvas)
-2. x-down & y-down (coordinates of the last mouse down on canvas)
-3. x-before & y-before (coordinates of the mouse before this movement on canvas)
-4. x-after & y-after (coordinates of the mouse after this movement on canvas)
-5. body-count (number of bodies in the world)
-6. body-list (list of ids of all bodies in defined in the world)
-7. canvas-width & canvas-height (dimensions of the HTML5 canvas in pixels)
-8. key-down (code of the last pressed key)
-9. key-up (code of released key)
+1. body-count (number of bodies in the world)
+2. body-list (list of ids of all bodies in defined in the world)
+3. canvas-width & canvas-height (dimensions of the HTML5 canvas in pixels)
 
 
 Sample programs :
 
 1. Change colors of all bodies to random colors when a mouseup occurs
 
-(define (change-all-colors b-list)
-  (if (not (null? b-list))
-      (begin
-        (change-body-color (car b-list) (color (random) (random) (random)))
-        (change-all-colors (cdr b-list)))))
-
-(on mouseup "(change-all-colors body-list)")
+(define (change-all-colors)
+	(define (helper b-list)
+	 	(if (not (null? b-list))
+			(begin
+				(change-body-color (car b-list) (color (random) (random) (random)))
+				(helper (cdr b-list)))))
+	(helper body-list))
+(on 'mouseup (lambda (x y)
+	(change-all-colors)))
 
 2. Move a body around, with WASD keys
 
-(define id "id2")
-(define (jump id)
+(define (jump code)
+  (define id "id2")
   (cond
-    ((= key-down 65) (apply-impulse id (vector2 -500 0)))
-    ((= key-down 68) (apply-impulse id (vector2 500 0)))
-    ((= key-down 87) (apply-impulse id (vector2 0 500)))
-    ((= key-down 83) (apply-impulse id (vector2 0 -500)))
+    ((= code 65) (apply-impulse id (vector2 -500 0)))
+    ((= code 68) (apply-impulse id (vector2 500 0)))
+    ((= code 87) (apply-impulse id (vector2 0 500)))
+    ((= code 83) (apply-impulse id (vector2 0 -500)))
 ))
-(on keydown "(jump id)")
+(on 'keydown jump)
 
 3. Repeatedly shoot bullets every second
 
@@ -140,15 +140,22 @@ Sample programs :
 
 4. Create a drag and throw effect on bodies
 
-(define drag? #f)
+(define (add-drag-handler handler)
+  (define x-before 0)
+  (define y-before 0)
+  (define (handler-wrapper x y)
+    (handler x-before y-before x y)
+    (set! x-before x)
+    (set! y-before y))
+  (define (start-drag x y)
+    (set! x-before x)
+    (set! y-before y)
+    (on 'mousemove handler-wrapper))
+  (define (stop-drag x y)
+    (~on 'mousemove handler-wrapper))
+  (on 'mousedown start-drag)
+  (on 'mouseup stop-drag)
+  (on 'mouseout stop-drag))
 
-(on mousedown "(set! drag? #t)")
-(on mouseup "(set! drag? #f)")
-
-
-(define (pull)
-  (if drag?
-    (apply-impulse (body-at (vector2 x-before y-before)) (vector2 (* 50 (- x-after x-before)) (* 50 (- y-after y-before))))))
-
-(on mousemove "(pull)")
-
+(add-drag-handler (lambda (x-before y-before x-after y-after)
+  (apply-impulse (body-at (vector2 x-before y-before)) (vector2 (* 50 (- x-after x-before)) (* 300 (- y-after y-before))))))
