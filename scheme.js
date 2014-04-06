@@ -1,3 +1,19 @@
+Set = Set || function(array) {
+    var store = {};
+    for (var i = 0; i < array.length; i++) {
+        store[array[i]] = true;
+    }
+    this.has = function(el) {
+        return el in store;
+    };
+    this.add = function(el) {
+        if (el in store) {
+            return;
+        }
+        store[el] = true;
+    };
+};
+
 /*Global object*/
 var g_Scheme = {
     interpreter: undefined, // BiwaScheme object that interprets
