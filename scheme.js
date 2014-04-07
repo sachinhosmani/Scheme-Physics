@@ -1,4 +1,4 @@
-Set = Set || function(array) {
+var Set = function(array) {
     var store = {};
     for (var i = 0; i < array.length; i++) {
         store[array[i]] = true;
